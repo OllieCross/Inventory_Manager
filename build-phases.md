@@ -85,82 +85,113 @@ Verified by:
 
 ---
 
-## Phase 4 - Layout, Auth Pages & Navigation [PENDING]
+## Phase 4 - Layout, Auth Pages & Navigation [COMPLETE]
 
 Goal: The app runs in the browser. You can log in with the seeded admin account
 and see a working header with role-aware navigation.
 
-Files to write:
+Files written:
 
-- `src/app/globals.css` - Tailwind base, global dark background, font
-- `src/app/layout.tsx` - root HTML shell, SessionProvider, font class
-- `src/app/page.tsx` - home redirect (logged in -> /scan, logged out -> /login)
-- `src/app/login/page.tsx` - credentials login form with error display
-- `src/components/layout/Header.tsx` - logo, nav links gated by role, sign-out button
-- `src/components/layout/AuthGuard.tsx` - client component enforcing minimum role
+- `src/app/globals.css` - Tailwind base, dark background, custom scrollbar, btn/input/card utility classes
+- `src/app/layout.tsx` - root HTML shell, SessionProvider, PWA metadata, viewport config
+- `src/app/page.tsx` - server component redirect (session -> /scan, no session -> /login)
+- `src/app/login/page.tsx` - credentials login form with error display, logo, loading state
+- `src/components/layout/Header.tsx` - sticky header: logo, role-gated nav links, role badge, sign-out
+- `src/components/layout/AuthGuard.tsx` - client guard: redirects unauthenticated to /login, insufficient role to /scan
 
 Verified by:
 
+- `npx tsc --noEmit` - zero errors
 - `npm run dev` starts without errors
-- Browser loads at <http://localhost:3000> and redirects to /login
-- Login with <admin@sfxproone.com> / admin123 succeeds
-- Header shows correct name and role
+- Browser loads at `http://localhost:3000` and redirects to /login
+- Login with `admin@sfxproone.com` / `admin123` succeeds
+- Header shows correct name and role badge
 - Sign out returns to /login
 
 ---
 
-## Phase 5 - Case Viewer (Scan + View) [PENDING]
+## Phase 5 - Case Viewer (Scan + View) [COMPLETE]
 
 Goal: A stagehand can scan a QR code or type a case ID and see the full case contents
 including gear list, images, and PDF documents.
 
-Files to write:
+Files written:
 
-- `src/app/scan/page.tsx` - camera scanner page
-- `src/app/case/[id]/page.tsx` - case detail page (gear list, gallery, documents)
-- `src/components/scanner/QRScanner.tsx` - html5-qrcode wrapper, handles legacy Google Keep URLs
-- `src/components/media/CaseGallery.tsx` - image lightbox / swipe viewer
-- `src/components/media/PDFViewer.tsx` - pdf.js embed for viewing manuals in-browser
+- `src/app/api/cases/lookup/route.ts` - GET by qrdata query param, returns case id + name
+- `src/lib/minio.ts` - added getFileUrl() for presigned GET URLs (1hr expiry)
+- `src/app/scan/page.tsx` - camera scanner + manual fallback input, loading/error states
+- `src/app/case/[id]/page.tsx` - server component: Prisma fetch + presigned URLs + render
+- `src/components/scanner/QRScanner.tsx` - dynamically imported html5-qrcode wrapper
+- `src/components/media/CaseGallery.tsx` - tap-to-open lightbox with prev/next navigation
+- `src/components/media/PDFViewer.tsx` - pdf.js canvas renderer with page nav + open-in-new-tab fallback
+- `src/app/globals.css` - added html5-qrcode style overrides (white icon, square viewport, centered icon, branded button)
 
 QR handling logic:
 
-- Raw string (new stickers) -> look up by qrdata field directly
-- Google Keep URL (legacy) -> strip prefix, look up by qrdata field directly
-- Both cases resolve to the same GET /api/cases?qrdata=... lookup
+- Any raw string (new stickers) -> looked up directly via qrdata field
+- Legacy Google Keep URL -> stored as-is in qrdata, looked up the same way
+- Both cases go through GET /api/cases/lookup?qrdata=...
+
+Presigned URL strategy:
+
+- GET URLs are generated server-side in the case detail page (never exposed via client API)
+- PUT URLs are generated via /api/minio/presigned-url (editor only, Phase 6)
 
 Verified by:
 
-- Scanning SAMPLE-AUDIO-001 (or typing it) shows the Main PA Case gear list
-- Scanning the legacy Keep URL shows the Legacy Mic Case
+- `npx tsc --noEmit` - zero errors
+- Typing SAMPLE-AUDIO-001 in manual input shows Main PA Case gear list
+- Typing the legacy Keep URL shows Legacy Mic Case
 - VIEWER role can see all content but has no edit buttons
+- Camera scanner requests permission and scans live QR codes
 
 ---
 
-## Phase 6 - Case Editor (Create + Edit + Upload) [PENDING]
+## Phase 6 - Case Editor (Create + Edit + Upload) [COMPLETE]
 
 Goal: An editor can create new cases, edit gear lists, upload images and PDFs,
 and move items between cases.
 
-Files to write:
+Files written:
 
-- `src/app/editor/page.tsx` - list all cases with edit/delete actions
-- `src/app/editor/new/page.tsx` - new case form: name, description, QR scan or manual entry, initial items
-- `src/components/forms/CaseEditorForm.tsx` - full editor form with:
-  - drag-to-reorder item list
-  - HEIC -> JPEG conversion via heic2any before upload
+- `src/lib/minio.ts` - added deleteFile() using DeleteObjectCommand
+- `src/app/api/cases/[id]/images/route.ts` - POST: record image in DB after MinIO upload
+- `src/app/api/cases/[id]/images/[imageId]/route.ts` - DELETE: remove from MinIO + DB
+- `src/app/api/cases/[id]/documents/route.ts` - POST: record document in DB after MinIO upload
+- `src/app/api/cases/[id]/documents/[docId]/route.ts` - DELETE: remove from MinIO + DB
+- `src/app/api/cases/[id]/items/[itemId]/move/route.ts` - PATCH: move item to another case
+- `src/app/editor/page.tsx` - server component: case list with view/edit/delete (admin only) actions
+- `src/app/editor/new/page.tsx` - create case: name, description, QR scan or manual entry, items
+- `src/app/editor/[id]/page.tsx` - server component: fetches case + presigned URLs, renders edit form
+- `src/components/editor/DeleteCaseButton.tsx` - confirm-before-delete client button
+- `src/components/forms/CaseEditorForm.tsx` - full editor form:
+  - create mode: basic info + QR code (scanner or manual) + gear list
+  - edit mode: all of above + photo upload + PDF upload + delete existing files
+  - HEIC/HEIF -> JPEG via heic2any (dynamic import)
   - image resize/compress (max 1920px, quality 0.8) via browser-image-compression
-  - camera capture or file picker for photos
-  - PDF upload
-  - move item to another case
+  - camera capture (capture=environment) or file picker for photos
+  - up/down reorder for gear list items
+  - move item to another case via dropdown
+
+Upload flow:
+
+1. Client processes file (HEIC convert + compress if image)
+2. Fetch presigned PUT URL from /api/minio/presigned-url
+3. PUT directly to MinIO (no Next.js bottleneck)
+4. POST file metadata to /api/cases/[id]/images or /documents to record in DB
 
 Verified by:
 
+- `npx tsc --noEmit` - zero errors
 - Editor can create a new case with items
-- Editor can upload a HEIC photo from iPhone and it appears in the gallery as JPEG
-- Editor can upload a PDF and it opens in the PDF viewer
-- Editor can move an item to a different case
-- VIEWER sees the updated case content
-- VIEWER cannot access /editor routes (redirected)
+- After create, redirected to /editor/[id] for file uploads
+- Editor can upload photos (file picker + camera capture)
+- HEIC photos are converted to JPEG before upload
+- Editor can upload a PDF, set title and type
+- Editor can delete photos and documents
+- Editor can move an item to a different case via dropdown
+- VIEWER cannot access /editor routes (redirected to /scan)
+- ADMIN sees Delete button on case list; non-admin does not
 
 ---
 
@@ -188,7 +219,7 @@ Deployment steps:
 
 Verified by:
 
-- <https://sfxproone.olliecross.com> loads over HTTPS with valid certificate
+- `https://sfxproone.olliecross.com` loads over HTTPS with valid certificate
 - Authentik SSO login works
 - Admin can assign roles to users from the panel
 - Login brute-force is blocked after 5 attempts (Redis rate-limit)

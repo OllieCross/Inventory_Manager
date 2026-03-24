@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply bg-background text-foreground;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-background;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-brand text-white font-medium px-4 py-2 rounded-lg
+           hover:bg-brand/90 active:scale-95 transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .btn-ghost {
+    @apply text-foreground/70 font-medium px-4 py-2 rounded-lg
+           hover:bg-white/5 active:scale-95 transition-all duration-150;
+  }
+
+  .input-field {
+    @apply w-full bg-surface border border-white/10 text-foreground
+           rounded-lg px-3 py-2.5 text-sm
+           placeholder:text-muted
+           focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand
+           transition-colors duration-150;
+  }
+
+  .card {
+    @apply bg-surface border border-white/10 rounded-xl p-4;
+  }
+}
+
+/* ----------------------------------------------------------------
+   html5-qrcode overrides
+   ---------------------------------------------------------------- */
+
+/* Square scan region */
+#qr-reader__scan_region {
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+}
+
+#qr-reader__scan_region video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* White icon centered */
+#qr-reader__scan_region img {
+  filter: invert(1) !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+#qr-reader__scan_region {
+  position: relative !important;
+}
+
+/* Remove default white background from the container */
+#qr-reader {
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Style the permission / start button to match our design */
+#qr-reader__dashboard button {
+  background-color: #1576bf !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 8px 20px !important;
+  font-size: 14px !important;
+  font-family: inherit !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+}
+
+#qr-reader__dashboard button:hover {
+  background-color: #1265a8 !important;
+}
+
+/* Remove the default border around the scan box */
+#qr-reader__scan_region canvas {
+  display: none !important;
+}
+
+/* Hide the verbose status text */
+#qr-reader__status_span {
+  display: none !important;
+}

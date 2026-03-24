@@ -33,7 +33,7 @@
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS & PostCSS
 - **Database ORM:** Prisma
-- **Auth:** NextAuth.js + Authentik 
+- **Auth:** NextAuth.js + Authentik
 - **Storage:** MinIO (S3 compatible object storage)
 - **Caching:** Redis
 - **Infra:** Docker, Docker Compose, Traefik
@@ -61,12 +61,14 @@
 ### Installation & Local Setup
 
 1. **Clone the repository:**
+
    ```bash
    git clone <repository-url>
    cd SFXProOne_CaseManager
    ```
 
 2. **Install Node dependencies:**
+
    ```bash
    npm install
    # or yarn / pnpm install
@@ -81,18 +83,22 @@
 
 4. **Spin up Infrastructure (Docker):**
    Start the supporting databases, Redis, MinIO, Authentik, and Traefik instances:
+
    ```bash
    docker-compose up -d
    ```
+
    *(You may also need to start specific infrastructure stacks manually inside `/infrastructure` if they aren't bundled in the main `docker-compose.yml`)*
 
 5. **Run Prisma Migrations:**
+
    ```bash
    npx prisma migrate dev
    npx prisma db seed # If seed data is required
    ```
 
 6. **Start the Development Server:**
+
    ```bash
    npm run dev
    ```
@@ -102,3 +108,9 @@ The application should now be running cleanly on [http://localhost:3000](http://
 ## 🛡 Authentication
 
 This project relies on **Authentik** via NextAuth. Ensure that your Authentik instance is running, and you have configured an appropriate OAuth2 / OIDC application for NextAuth to communicate with.
+
+## ✅ To-Do List
+
+- [ ] Light/Dark mode based on OS theme
+- [ ] Release Notes page
+- [ ] Footer with credits

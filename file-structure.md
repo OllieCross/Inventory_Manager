@@ -1,6 +1,6 @@
 # SFXProOne CaseManager - File & Folder Structure
 
-This document outlines the projected file and folder structure for the SFXProOne CaseManager full-stack application. It uses Next.js 14+ (App Router), Prisma, Tailwind CSS, Docker, and various integrations (MinIO, Redis, Authentik, Traefik).
+This document outlines the projected file and folder structure for the SFXProOne CaseManager full-stack application. It uses Next.js 15 (App Router), Prisma, Tailwind CSS, Docker, and various integrations (MinIO, Redis, Authentik, Traefik).
 
 ```text
 SFXProOne_CaseManager/
@@ -37,17 +37,29 @@ SFXProOne_CaseManager/
 |-- src/                     # Source Code Directory
 |   |-- app/                 # Next.js 14 App Router Directory
 |   |   |-- layout.tsx       # Root layout containing HTML/body, providers (SessionProvider)
-|   |   |-- page.tsx         # Home page (login or redirect to dashboard/scanner)
-|   |   |-- globals.css      # Global styles and Tailwind CSS base imports
+|   |   |-- page.tsx         # Home page: redirects to /scan (authed) or /login (unauthed)
+|   |   |-- globals.css      # Global styles, Tailwind base, btn/input/card utility classes
+|   |   |
+|   |   |-- login/
+|   |   |   `-- page.tsx     # Credentials login form with error display
 |   |   |
 |   |   |-- api/             # Next.js API Routes (Backend logic)
 |   |   |   |-- auth/
 |   |   |   |   `-- [...nextauth]/route.ts  # NextAuth.js v5 handler for Authentik OIDC
 |   |   |   |-- cases/
 |   |   |   |   |-- route.ts                # GET all cases, POST new case
-|   |   |   |   `-- [id]/route.ts           # GET, PUT, DELETE specific case
+|   |   |   |   |-- lookup/route.ts         # GET ?qrdata=... -> returns case id (used by scanner)
+|   |   |   |   `-- [id]/
+|   |   |   |       |-- route.ts            # GET, PUT, DELETE specific case
+|   |   |   |       |-- images/
+|   |   |   |       |   |-- route.ts        # POST: record image after MinIO upload
+|   |   |   |       |   `-- [imageId]/route.ts  # DELETE: remove from MinIO + DB
+|   |   |   |       |-- documents/
+|   |   |   |       |   |-- route.ts        # POST: record document after MinIO upload
+|   |   |   |       |   `-- [docId]/route.ts    # DELETE: remove from MinIO + DB
+|   |   |   |       `-- items/[itemId]/move/route.ts  # PATCH: move item to another case
 |   |   |   `-- minio/
-|   |   |       `-- presigned-url/route.ts  # Generates Pre-signed URLs for direct MinIO file uploads
+|   |   |       `-- presigned-url/route.ts  # Generates presigned PUT URLs for direct MinIO uploads
 |   |   |
 |   |   |-- scan/
 |   |   |   `-- page.tsx     # QR Scanner interface using html5-qrcode
@@ -56,8 +68,9 @@ SFXProOne_CaseManager/
 |   |   |   `-- [id]/page.tsx # Dynamic route to display case contents, PDFs, and Images
 |   |   |
 |   |   |-- editor/          # Editor Dashboard (Role protected)
-|   |   |   |-- page.tsx     # List of cases to manage
-|   |   |   `-- new/page.tsx # Form to create a new case and select legacy vs new QR codes
+|   |   |   |-- page.tsx     # Server component: case list with edit/delete actions
+|   |   |   |-- new/page.tsx # Create new case: name, description, QR code, gear list
+|   |   |   `-- [id]/page.tsx # Edit case: gear list + photo/document upload/delete
 |   |   |
 |   |   `-- admin/           # Admin Dashboard (Role protected)
 |   |       `-- page.tsx     # Future user management, audit logs, and system limits
@@ -69,8 +82,10 @@ SFXProOne_CaseManager/
 |   |   |-- media/
 |   |   |   |-- PDFViewer.tsx # Integrates pdf.js to view manuals/certificates
 |   |   |   `-- CaseGallery.tsx # Image viewer for case contents
+|   |   |-- editor/
+|   |   |   `-- DeleteCaseButton.tsx  # Confirm-before-delete client button (admin only)
 |   |   |-- forms/
-|   |   |   `-- CaseEditorForm.tsx # Form tackling form validation, direct S3 uploads, HEIC conversion
+|   |   |   `-- CaseEditorForm.tsx # Create/edit form: items, HEIC convert, compress, upload, move
 |   |   `-- layout/
 |   |       |-- Header.tsx   # Navigation bar highlighting current user and role
 |   |       `-- AuthGuard.tsx # Wrapper to enforce RBAC (Viewer, Editor, Admin)
