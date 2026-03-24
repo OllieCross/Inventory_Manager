@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  VIEWER
+  EDITOR
+  ADMIN
+}
+
+enum DocType {
+  MANUAL
+  CERTIFICATE
+  OTHER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  password     String?
+  createdAt    DateTime @default(now())
+  role         Role     @default(VIEWER)
+  casesCreated Case[]   @relation("CreatedBy")
+  casesUpdated Case[]   @relation("UpdatedBy")
+}
+
+model Case {
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  // qrdata holds the raw QR code payload - could be a UUID string, legacy Google Keep URL,
+  // or any other arbitrary string read from a physical sticker.
+  qrdata      String     @unique
+  items       Item[]
+  images      Image[]
+  documents   Document[]
+  createdById String
+  createdBy   User       @relation("CreatedBy", fields: [createdById], references: [id])
+  updatedById String?
+  updatedBy   User?      @relation("UpdatedBy", fields: [updatedById], references: [id])
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Item {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  name      String
+  quantity  Int      @default(1)
+  comment   String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Image {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  fileKey   String   @unique
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+}
+
+model Document {
+  id        String   @id @default(cuid())
+  caseId    String
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  title     String
+  type      DocType
+  fileKey   String   @unique
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime @default(now())
+}
