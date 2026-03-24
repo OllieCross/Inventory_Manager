@@ -111,6 +111,8 @@ This project relies on **Authentik** via NextAuth. Ensure that your Authentik in
 
 ## ✅ To-Do List
 
-- [ ] Light/Dark mode based on OS theme
+- [ ] Light/Dark mode switch based on OS settings
 - [ ] Release Notes page
-- [ ] Footer with credits
+- [ ] Footer with credits, github, linkedin, instagram, copyrights
+- [ ] editor/ edit the assigned qr code
+- [ ] scan/ List all available cases
