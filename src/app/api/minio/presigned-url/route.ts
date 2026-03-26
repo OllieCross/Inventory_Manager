@@ -24,6 +24,10 @@ function getS3Public(): S3Client {
         secretAccessKey: process.env.MINIO_ROOT_PASSWORD!,
       },
       forcePathStyle: true,
+      // Disable SDK-level checksums - MinIO rejects presigned PUTs that
+      // include x-amz-checksum-crc32 as an unsigned payload header.
+      requestChecksumCalculation: 'WHEN_REQUIRED',
+      responseChecksumValidation: 'WHEN_REQUIRED',
     })
   }
   return s3Public
