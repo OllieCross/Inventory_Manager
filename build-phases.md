@@ -195,31 +195,177 @@ Verified by:
 
 ---
 
-## Phase 7 - Admin Panel, Security Hardening & Deployment [PENDING]
+## Phase 7 - Admin Panel, Security Hardening & Dockerfile [COMPLETE]
 
-Goal: Admin dashboard, rate-limiting, Dockerfile, Traefik config, and server deployment.
+Goal: Admin dashboard, Redis rate-limiting, and the production Dockerfile.
+Everything in this phase is written and tested locally before touching the server.
 
-Files to write:
+Files written:
 
-- `src/app/admin/page.tsx` - user list, role assignment, basic audit log placeholder
-- Rate-limiting middleware using Redis (applied to login + presigned URL routes)
-- `Dockerfile` - multi-stage build: deps -> builder -> runner (standalone output)
-- `infrastructure/traefik/traefik.yml` - static config: entrypoints 80/443, Let's Encrypt
-- `infrastructure/traefik/dynamic_conf.yml` - TLS options, security headers middleware
-- `infrastructure/authentik/docker-compose.yml` - standalone Authentik stack
-
-Deployment steps:
-
-1. Set up Traefik + `proxy` Docker network on server
-2. Deploy Authentik, create OIDC provider, populate AUTHENTIK_* vars in .env
-3. Set DATABASE_URL back to @postgres:5432 in .env
-4. `docker compose build && docker compose up -d`
-5. `docker compose exec nextjs-app npx prisma migrate deploy`
-6. `docker compose exec nextjs-app node prisma/seed.js` (if first deploy)
+- `src/lib/rateLimit.ts` - shared rate-limit helper using ioredis (sliding window, fails open if Redis is down)
+- `src/lib/auth.ts` - updated: rate-limit applied per email in the credentials authorize callback; throws after 5 attempts in 60s
+- `src/app/api/minio/presigned-url/route.ts` - updated: rate-limit applied per user ID; returns 429 after 20 requests in 60s
+- `src/app/api/admin/users/[userId]/role/route.ts` - PATCH: ADMIN-only endpoint to change a user's role (cannot change own role)
+- `src/components/admin/RoleSelector.tsx` - client component: role dropdown with saving/saved/error feedback and router.refresh()
+- `src/app/admin/page.tsx` - server component: user table (name, email, joined date, role selector), audit log placeholder
+- `Dockerfile` - three-stage build: deps (npm ci) -> builder (prisma generate + next build) -> runner (standalone output, non-root user, prisma CLI copied for migrations)
 
 Verified by:
 
-- `https://sfxproone.olliecross.com` loads over HTTPS with valid certificate
-- Authentik SSO login works
-- Admin can assign roles to users from the panel
-- Login brute-force is blocked after 5 attempts (Redis rate-limit)
+- `npx tsc --noEmit` - zero errors
+- `docker build -t sfxproone-casemanager .` - build succeeds, all 20 routes present in output
+- Admin page loads at /admin for ADMIN role, redirects to /scan for other roles
+- Admin can change a user's role from VIEWER to EDITOR in the UI
+- Login brute-force blocked after 5 attempts (rate-limit throws error shown on login page)
+- Upload rate-limit returns 429 after 20 requests per user in 60s
+
+---
+
+## Phase 8 - DNS & Server Infrastructure Setup [PENDING]
+
+Goal: The server is ready to receive the application.
+Traefik is running and issuing certificates, Authentik is deployed and configured,
+and DNS is pointing at the server's public IP.
+This phase is done via Claude Code in the server terminal - not in this local session.
+
+Pre-requisites:
+
+- A Linux server (Ubuntu 22.04 or Debian 12 recommended) with Docker + Docker Compose installed
+- The server's public IPv4 address is known
+
+Step 1 - DNS setup on websupport.sk:
+
+- Log in to websupport.sk -> Sprava domeny -> DNS zaznamy for the target domain
+- Add an A record: `sfxproone.olliecross.com` -> server public IP, TTL 300
+- Add a CNAME record: `auth.sfxproone.olliecross.com` -> `sfxproone.olliecross.com` (for Authentik)
+- Wait for propagation (5-30 min); verify with `dig sfxproone.olliecross.com`
+
+Step 2 - Server baseline:
+
+```bash
+docker network create proxy
+mkdir -p /opt/traefik /opt/authentik
+touch /opt/traefik/acme.json && chmod 600 /opt/traefik/acme.json
+```
+
+Step 3 - Write infrastructure config files (Claude Code will write these on the server):
+
+- `infrastructure/traefik/traefik.yml` - static config:
+  - entryPoints: web (80, redirect to websecure), websecure (443)
+  - certificatesResolvers.letsencrypt.acme: email, tlsChallenge, storage at /acme.json
+  - providers.docker: exposedByDefault false, network proxy
+  - api.dashboard false (disabled for security)
+
+- `infrastructure/traefik/dynamic_conf.yml` - dynamic config:
+  - TLS options: minVersion VersionTLS12, cipherSuites (modern safe list)
+  - Middleware `secHeaders`: X-Frame-Options DENY, X-Content-Type-Options nosniff, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy (camera=self for QR scanner)
+
+- `infrastructure/authentik/docker-compose.yml` - standalone Authentik stack:
+  - Services: authentik-server, authentik-worker, postgresql (separate from app DB), redis
+  - Traefik labels to expose at `auth.sfxproone.olliecross.com` with TLS + secHeaders middleware
+  - Volumes: authentik-db-data, authentik-media, authentik-certs
+  - Env: AUTHENTIK_SECRET_KEY, AUTHENTIK_POSTGRESQL__* vars
+
+Step 4 - Deploy Traefik:
+
+```bash
+docker compose -f /opt/traefik/docker-compose.yml up -d
+# verify: docker logs traefik | grep "Certificate obtained"
+```
+
+Step 5 - Deploy Authentik:
+
+```bash
+cd /opt/authentik && docker compose up -d
+# wait ~60s for first boot, then open https://auth.sfxproone.olliecross.com/if/flow/initial-setup/
+# complete the admin setup wizard
+```
+
+Step 6 - Configure Authentik OIDC provider:
+
+- Admin UI -> Applications -> Providers -> Create -> OAuth2/OpenID Provider
+  - Name: CaseManager
+  - Client ID: (auto-generated, copy it)
+  - Client Secret: (auto-generated, copy it)
+  - Redirect URIs: `https://sfxproone.olliecross.com/api/auth/callback/authentik`
+  - Scopes: openid, email, profile
+- Admin UI -> Applications -> Create
+  - Name: CaseManager, Slug: casemanager, Provider: CaseManager
+- Admin UI -> Directory -> Groups -> Create group `sfxproone-editors` and `sfxproone-admins`
+  - Property Mappings: add a custom mapping that exposes group membership as a `role` claim
+- Copy AUTHENTIK_CLIENT_ID and AUTHENTIK_CLIENT_SECRET to the app .env on the server
+
+Verified by:
+
+- `https://auth.sfxproone.olliecross.com` loads the Authentik login page over HTTPS
+- `https://sfxproone.olliecross.com` resolves (Traefik returns 502 until Phase 9 - that is expected)
+- Authentik OIDC provider is created and redirect URI is saved
+- `dig sfxproone.olliecross.com` returns the correct server IP
+
+---
+
+## Phase 9 - Production Deployment [PENDING]
+
+Goal: The application is live on the server over HTTPS with SSO login working.
+This phase is done via Claude Code in the server terminal - not in this local session.
+
+Pre-requisites:
+
+- Phase 7 complete (Dockerfile exists and builds locally)
+- Phase 8 complete (Traefik + Authentik running, DNS propagated, OIDC provider configured)
+
+Step 1 - Clone or copy the project onto the server:
+
+```bash
+git clone <repo-url> /opt/sfxproone
+# or: rsync -av --exclude node_modules --exclude .next . user@server:/opt/sfxproone
+```
+
+Step 2 - Create the production .env on the server:
+
+```bash
+cp /opt/sfxproone/.env.example /opt/sfxproone/.env
+# Edit /opt/sfxproone/.env:
+#   DATABASE_URL=postgresql://casemanager:STRONG_PASSWORD@postgres:5432/casemanager
+#   REDIS_URL=redis://redis:6379
+#   MINIO_ENDPOINT=minio
+#   MINIO_PORT=9000
+#   MINIO_ACCESS_KEY=...
+#   MINIO_SECRET_KEY=...
+#   AUTH_SECRET=<random 32-char string>
+#   NEXTAUTH_URL=https://sfxproone.olliecross.com
+#   AUTHENTIK_ISSUER=https://auth.sfxproone.olliecross.com/application/o/casemanager/
+#   AUTHENTIK_CLIENT_ID=<from Phase 8>
+#   AUTHENTIK_CLIENT_SECRET=<from Phase 8>
+```
+
+Step 3 - Build and start the app stack:
+
+```bash
+cd /opt/sfxproone
+docker compose build
+docker compose up -d
+```
+
+Step 4 - Run database migrations and seed:
+
+```bash
+docker compose exec nextjs-app npx prisma migrate deploy
+docker compose exec nextjs-app node prisma/seed.js   # only on first deploy
+```
+
+Step 5 - Verify all services are healthy:
+
+```bash
+docker compose ps   # all services should show "healthy" or "running"
+docker compose logs nextjs-app --tail=50   # check for startup errors
+```
+
+Verified by:
+
+- `https://sfxproone.olliecross.com` loads over HTTPS with a valid Let's Encrypt certificate
+- Credentials login works with `admin@sfxproone.com` / `admin123`
+- Authentik SSO login redirects correctly and returns to the app with role assigned
+- QR scanner works on a mobile device (camera permission prompt appears)
+- Admin can assign roles to users from the /admin panel
+- Login brute-force is blocked after 5 attempts (Redis rate-limit returns 429)

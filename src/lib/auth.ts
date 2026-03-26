@@ -4,6 +4,7 @@ import Credentials from 'next-auth/providers/credentials'
 import type { Provider } from 'next-auth/providers'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const providers: Provider[] = [
   Credentials({
@@ -14,6 +15,9 @@ const providers: Provider[] = [
     },
     async authorize(credentials) {
       if (!credentials?.email || !credentials?.password) return null
+
+      const { allowed } = await checkRateLimit(`login:${credentials.email as string}`)
+      if (!allowed) throw new Error('Too many login attempts. Please wait 60 seconds and try again.')
 
       const user = await prisma.user.findUnique({
         where: { email: credentials.email as string },

@@ -4,6 +4,7 @@ import { s3, BUCKET, ensureBucket } from '@/lib/minio'
 import { PutObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { z } from 'zod'
+import { checkRateLimit } from '@/lib/rateLimit'
 
 const schema = z.object({
   caseId: z.string().min(1),
@@ -22,6 +23,11 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   if (!['EDITOR', 'ADMIN'].includes(session.user.role)) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { allowed } = await checkRateLimit(`upload:${session.user.id}`, 20, 60)
+  if (!allowed) {
+    return NextResponse.json({ error: 'Too many upload requests. Please wait before uploading more files.' }, { status: 429 })
   }
 
   const body = await req.json()
