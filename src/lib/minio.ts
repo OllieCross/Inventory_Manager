@@ -26,20 +26,24 @@ export async function ensureBucket() {
 
   // Allow the browser to PUT files directly to MinIO from the app origin.
   // Re-applied on every cold start so it survives bucket recreation.
-  await s3.send(new PutBucketCorsCommand({
-    Bucket: BUCKET,
-    CORSConfiguration: {
-      CORSRules: [
-        {
-          AllowedOrigins: [process.env.NEXTAUTH_URL ?? '*'],
-          AllowedMethods: ['PUT', 'GET', 'HEAD'],
-          AllowedHeaders: ['*'],
-          ExposeHeaders: ['ETag'],
-          MaxAgeSeconds: 3600,
-        },
-      ],
-    },
-  }))
+  try {
+    await s3.send(new PutBucketCorsCommand({
+      Bucket: BUCKET,
+      CORSConfiguration: {
+        CORSRules: [
+          {
+            AllowedOrigins: [process.env.NEXTAUTH_URL ?? '*'],
+            AllowedMethods: ['PUT', 'GET', 'HEAD'],
+            AllowedHeaders: ['*'],
+            ExposeHeaders: ['ETag'],
+            MaxAgeSeconds: 3600,
+          },
+        ],
+      },
+    }))
+  } catch (err) {
+    console.error('[minio] Failed to apply CORS policy:', err)
+  }
 }
 
 export async function getFileUrl(fileKey: string, expiresIn = 3600): Promise<string> {

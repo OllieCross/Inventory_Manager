@@ -7,18 +7,27 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { z } from 'zod'
 import { checkRateLimit } from '@/lib/rateLimit'
 
-// Separate S3 client that signs URLs using the public-facing MinIO URL.
-// The browser PUTs directly to this URL, so the Host header must match
-// what the signature was computed for.
-const s3Public = new S3Client({
-  endpoint: process.env.MINIO_PUBLIC_URL,
-  region: 'us-east-1',
-  credentials: {
-    accessKeyId: process.env.MINIO_ROOT_USER!,
-    secretAccessKey: process.env.MINIO_ROOT_PASSWORD!,
-  },
-  forcePathStyle: true,
-})
+// Lazily created so a missing MINIO_PUBLIC_URL produces a clear 500 message
+// rather than crashing the module at import time.
+let s3Public: S3Client | null = null
+
+function getS3Public(): S3Client {
+  if (!process.env.MINIO_PUBLIC_URL) {
+    throw new Error('MINIO_PUBLIC_URL is not set in environment variables')
+  }
+  if (!s3Public) {
+    s3Public = new S3Client({
+      endpoint: process.env.MINIO_PUBLIC_URL,
+      region: 'us-east-1',
+      credentials: {
+        accessKeyId: process.env.MINIO_ROOT_USER!,
+        secretAccessKey: process.env.MINIO_ROOT_PASSWORD!,
+      },
+      forcePathStyle: true,
+    })
+  }
+  return s3Public
+}
 
 const schema = z.object({
   caseId: z.string().min(1),
@@ -70,7 +79,7 @@ export async function POST(req: Request) {
     ContentLength: maxBytes,
   })
 
-  const url = await getSignedUrl(s3Public, command, { expiresIn: 300 })
+  const url = await getSignedUrl(getS3Public(), command, { expiresIn: 300 })
 
   return NextResponse.json({ url, fileKey })
 }
