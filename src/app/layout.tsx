@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'CaseManager',
+    startupImage: '/apple-touch-icon.png',
   },
 }
 

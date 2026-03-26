@@ -111,14 +111,31 @@ This project relies on **Authentik** via NextAuth. Ensure that your Authentik in
 
 ## ✅ To-Do List
 
-- [ ] favicon.ico implementation
+v1.0.0.
+
+- [x] basic features
+- [x] docker deploy
+
+v1.0.1.
+
+- [x] favicon.ico implementation
+- [ ] default rear camera option
 - [ ] Release Notes page
 - [ ] No Case found Page
 - [ ] Dockerfile optimizations
 - [ ] Migrate Authentik and Traefik to separate folders outside project codebase
+
+v1.0.2.
+
 - [ ] Light/Dark mode switch based on OS settings
 - [ ] Footer with credits, github, linkedin, instagram, copyrights
 - [ ] /edit - option to edit the assigned qr code to case
 - [ ] /scan - option to ist all available cases
+- [ ] DB daily backup
+- [ ] password changer
+
+v 1.1.0.
+
 - [ ] Events organisation system
+- [ ] /events - date/location/time/contact/users/inventory/comment
 - [ ] Event inventory PDF generator
