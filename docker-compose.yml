@@ -83,8 +83,14 @@ services:
       - "traefik.http.routers.minio.rule=Host(`minio.sfxproone.olliecross.com`)"
       - "traefik.http.routers.minio.entrypoints=websecure"
       - "traefik.http.routers.minio.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.minio.middlewares=minio-cors"
       - "traefik.http.services.minio.loadbalancer.server.port=9000"
       - "traefik.docker.network=proxy"
+      - "traefik.http.middlewares.minio-cors.headers.accesscontrolalloworiginlist=https://sfxproone.olliecross.com"
+      - "traefik.http.middlewares.minio-cors.headers.accesscontrolallowmethods=GET,PUT,HEAD,OPTIONS"
+      - "traefik.http.middlewares.minio-cors.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.minio-cors.headers.accesscontrolexposeheaders=ETag"
+      - "traefik.http.middlewares.minio-cors.headers.accesscontrolmaxage=3600"
 
 volumes:
   postgres_data:
