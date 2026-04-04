@@ -4,7 +4,7 @@ import { marked } from 'marked'
 import Link from 'next/link'
 
 export const metadata = {
-  title: 'Changelog — SFXProOne CaseManager',
+  title: 'Changelog - SFXProOne CaseManager',
 }
 
 export default function ChangelogPage() {

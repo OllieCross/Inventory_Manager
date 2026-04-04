@@ -69,9 +69,10 @@ Thumbs.db
 # ----------------------------------------------------------------------
 infrastructure/traefik/acme.json
 infrastructure/**/.env
-
 docker-compose.override.yml
+
 # ----------------------------------------------------------------------
 # Sensitive Documentation
 # ----------------------------------------------------------------------
 .claude/
+context/

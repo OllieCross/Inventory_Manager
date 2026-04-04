@@ -6,15 +6,28 @@ import RoleSelector from '@/components/admin/RoleSelector'
 import { formatDate } from '@/lib/utils'
 
 const ACTION_LABEL: Record<string, string> = {
-  CASE_CREATED:      'Created case',
-  CASE_UPDATED:      'Updated case',
-  CASE_DELETED:      'Deleted case',
-  IMAGE_UPLOADED:    'Uploaded image',
-  IMAGE_DELETED:     'Deleted image',
-  DOCUMENT_UPLOADED: 'Uploaded document',
-  DOCUMENT_DELETED:  'Deleted document',
-  ITEM_MOVED:        'Moved item',
-  ROLE_CHANGED:      'Changed role',
+  CASE_CREATED:             'Created case',
+  CASE_UPDATED:             'Updated case',
+  CASE_DELETED:             'Deleted case',
+  IMAGE_UPLOADED:           'Uploaded image',
+  IMAGE_DELETED:            'Deleted image',
+  DOCUMENT_UPLOADED:        'Uploaded document',
+  DOCUMENT_DELETED:         'Deleted document',
+  ITEM_MOVED:               'Moved item',
+  ROLE_CHANGED:             'Changed role',
+  DEVICE_CREATED:           'Created device',
+  DEVICE_UPDATED:           'Updated device',
+  DEVICE_DELETED:           'Deleted device',
+  LOGBOOK_ENTRY_ADDED:      'Added logbook entry',
+  CONSUMABLE_CREATED:       'Created consumable',
+  CONSUMABLE_UPDATED:       'Updated consumable',
+  CONSUMABLE_STOCK_ADJUSTED:'Adjusted consumable stock',
+  GROUP_CREATED:            'Created group',
+  GROUP_UPDATED:            'Updated group',
+  GROUP_DELETED:            'Deleted group',
+  EVENT_CREATED:            'Created event',
+  EVENT_UPDATED:            'Updated event',
+  EVENT_COMPLETED:          'Completed event',
 }
 
 function auditDetail(action: string, meta: Record<string, unknown> | null): string {
@@ -34,6 +47,24 @@ function auditDetail(action: string, meta: Record<string, unknown> | null): stri
       return (meta.itemName as string) ?? ''
     case 'ROLE_CHANGED':
       return `${meta.targetName}: ${meta.oldRole} -> ${meta.newRole}`
+    case 'DEVICE_CREATED':
+    case 'DEVICE_UPDATED':
+    case 'DEVICE_DELETED':
+      return (meta.deviceName as string) ?? ''
+    case 'LOGBOOK_ENTRY_ADDED':
+      return (meta.comment as string) ?? ''
+    case 'CONSUMABLE_CREATED':
+    case 'CONSUMABLE_UPDATED':
+    case 'CONSUMABLE_STOCK_ADJUSTED':
+      return (meta.name as string) ?? ''
+    case 'GROUP_CREATED':
+    case 'GROUP_UPDATED':
+    case 'GROUP_DELETED':
+      return (meta.name as string) ?? ''
+    case 'EVENT_CREATED':
+    case 'EVENT_UPDATED':
+    case 'EVENT_COMPLETED':
+      return (meta.name as string) ?? ''
     default:
       return ''
   }
