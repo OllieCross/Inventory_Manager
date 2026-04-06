@@ -352,6 +352,7 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name,
+            qrCode: qrCode || undefined,
             serialNumber: serialNumber || null,
             purchaseDate: purchaseDate || null,
             status,
@@ -363,6 +364,7 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
           const data = await res.json()
           throw new Error(data.error ?? 'Failed to update device')
         }
+        router.refresh()
         router.push(`/devices/${activeDeviceId}`)
       }
     } catch (err) {
@@ -385,29 +387,27 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
           <input type="text" required className="input-field" placeholder="e.g. Robe Pointe #3" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
-        {mode === 'create' && (
-          <div>
-            <label className="block text-sm font-medium mb-1.5">QR Code *</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                required
-                className="input-field"
-                placeholder="Scan or type the code from the sticker"
-                value={qrCode}
-                onChange={(e) => setQrCode(e.target.value)}
-              />
-              <button type="button" onClick={() => setShowScanner((v) => !v)} className="btn-ghost shrink-0 text-sm">
-                {showScanner ? 'Hide' : 'Scan'}
-              </button>
-            </div>
-            {showScanner && (
-              <div className="mt-2 rounded-xl overflow-hidden border border-white/10">
-                <QRScanner onScan={(result) => { setQrCode(result); setShowScanner(false) }} />
-              </div>
-            )}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">QR Code {mode === 'create' ? '*' : ''}</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              required={mode === 'create'}
+              className="input-field"
+              placeholder="Scan or type the code from the sticker"
+              value={qrCode}
+              onChange={(e) => setQrCode(e.target.value)}
+            />
+            <button type="button" onClick={() => setShowScanner((v) => !v)} className="btn-ghost shrink-0 text-sm">
+              {showScanner ? 'Hide' : 'Scan'}
+            </button>
           </div>
-        )}
+          {showScanner && (
+            <div className="mt-2 rounded-xl overflow-hidden border border-white/10">
+              <QRScanner onScan={(result) => { setQrCode(result); setShowScanner(false) }} />
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>

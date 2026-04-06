@@ -20,3 +20,10 @@ export function formatDate(date: Date | string): string {
     year: 'numeric',
   })
 }
+
+export function formatDateTime(date: Date | string): string {
+  const d = new Date(date)
+  const datePart = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  const timePart = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return `${datePart}, ${timePart}`
+}

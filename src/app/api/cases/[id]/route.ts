@@ -7,6 +7,7 @@ import { logAudit } from '@/lib/audit'
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(500).optional(),
+  qrdata: z.string().min(1).max(300).optional(),
   items: z
     .array(
       z.object({
@@ -58,7 +59,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
   }
 
-  const { name, description, items } = parsed.data
+  const { name, description, qrdata, items } = parsed.data
 
   const updated = await prisma.$transaction(async (tx) => {
     if (items !== undefined) {
@@ -91,6 +92,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
       data: {
         ...(name && { name }),
         ...(description !== undefined && { description }),
+        ...(qrdata && { qrdata }),
         updatedById: session.user.id,
       },
       include: {

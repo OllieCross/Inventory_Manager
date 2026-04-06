@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import RoleSelector from '@/components/admin/RoleSelector'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatDateTime } from '@/lib/utils'
 
 const ACTION_LABEL: Record<string, string> = {
   CASE_CREATED:             'Created case',
@@ -95,7 +95,7 @@ export default async function AdminPage() {
           <h1 className="text-xl font-bold mb-1">Admin Panel</h1>
           <p className="text-sm text-gray-400 mb-6">Manage users and their access roles.</p>
 
-          <div className="card overflow-hidden p-0">
+          <div className="card overflow-hidden p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left text-gray-400">
@@ -137,7 +137,7 @@ export default async function AdminPage() {
               No events recorded yet.
             </div>
           ) : (
-            <div className="card overflow-hidden p-0">
+            <div className="card overflow-hidden p-0 overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/10 text-left text-gray-400">
@@ -154,7 +154,7 @@ export default async function AdminPage() {
                       className={i < auditLogs.length - 1 ? 'border-b border-white/5' : ''}
                     >
                       <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
-                        {formatDate(log.createdAt)}
+                        {formatDateTime(log.createdAt)}
                       </td>
                       <td className="px-4 py-3 font-medium">{log.user.name}</td>
                       <td className="px-4 py-3 text-gray-300">

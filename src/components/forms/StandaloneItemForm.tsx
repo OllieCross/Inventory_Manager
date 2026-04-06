@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 type Props = {
   mode: 'create' | 'edit'
@@ -21,6 +22,8 @@ export default function StandaloneItemForm({ mode, itemId, initialData }: Props)
   const [comment, setComment] = useState(initialData?.comment ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -59,7 +62,31 @@ export default function StandaloneItemForm({ mode, itemId, initialData }: Props)
     }
   }
 
+  async function handleDelete() {
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/items/${itemId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      router.push('/editor')
+      router.refresh()
+    } catch {
+      setError('Failed to delete item')
+      setDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
   return (
+    <>
+    {showDeleteConfirm && (
+      <ConfirmModal
+        title="Delete Item"
+        message={`Are you sure you want to delete "${name}"? This cannot be undone.`}
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
+        loading={deleting}
+      />
+    )}
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label className="block text-sm font-medium mb-1.5">Item Name *</label>
@@ -98,12 +125,22 @@ export default function StandaloneItemForm({ mode, itemId, initialData }: Props)
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <button type="submit" disabled={saving} className="btn-primary">
           {saving ? 'Saving...' : mode === 'create' ? 'Create Item' : 'Save Changes'}
         </button>
         <button type="button" onClick={() => router.back()} className="btn-ghost">Cancel</button>
+        {mode === 'edit' && (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            className="ml-auto bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            Delete
+          </button>
+        )}
       </div>
     </form>
+    </>
   )
 }

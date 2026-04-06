@@ -6,6 +6,7 @@ import { logAudit } from '@/lib/audit'
 
 const updateSchema = z.object({
   name: z.string().min(1).max(100).optional(),
+  qrCode: z.string().min(1).max(300).optional(),
   serialNumber: z.string().optional().nullable(),
   purchaseDate: z.string().optional().nullable(),
   status: z.enum(['Working', 'Faulty', 'InRepair', 'Retired', 'Lost', 'RentedToFriend']).optional(),
@@ -54,17 +55,28 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const data = parsed.data
-  const device = await prisma.device.update({
-    where: { id },
-    data: {
-      ...data,
-      purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : data.purchaseDate,
-    },
-  })
 
-  await logAudit('DEVICE_UPDATED', session.user.id, device.id, { deviceName: device.name })
+  try {
+    const device = await prisma.device.update({
+      where: { id },
+      data: {
+        ...data,
+        purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : data.purchaseDate,
+      },
+    })
 
-  return NextResponse.json(device)
+    await logAudit('DEVICE_UPDATED', session.user.id, device.id, { deviceName: device.name })
+
+    return NextResponse.json(device)
+  } catch (err: unknown) {
+    if (
+      typeof err === 'object' && err !== null &&
+      'code' in err && (err as { code: string }).code === 'P2002'
+    ) {
+      return NextResponse.json({ error: 'QR code already in use by another device' }, { status: 409 })
+    }
+    throw err
+  }
 }
 
 export async function DELETE(_req: Request, { params }: Params) {

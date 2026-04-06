@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 import { marked } from 'marked'
 import DOMPurify from 'isomorphic-dompurify'
-import Link from 'next/link'
+import Header from '@/components/layout/Header'
 
 export const metadata = {
   title: 'Changelog - SFXProOne CaseManager',
@@ -14,17 +14,14 @@ export default function ChangelogPage() {
   const html = DOMPurify.sanitize(marked(markdown) as string)
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-10">
-      <div className="mb-6">
-        <Link href="/scan" className="text-sm text-muted hover:text-foreground transition-colors">
-          Go Back
-        </Link>
+    <>
+      <Header />
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <article
+          className="prose-changelog"
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
       </div>
-
-      <article
-        className="prose-changelog"
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-    </div>
+    </>
   )
 }

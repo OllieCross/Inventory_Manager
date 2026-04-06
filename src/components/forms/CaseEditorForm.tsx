@@ -352,12 +352,13 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
         const res = await fetch(`/api/cases/${activeCaseId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description, items }),
+          body: JSON.stringify({ name, description, qrdata: qrdata || undefined, items }),
         })
         if (!res.ok) {
           const data = await res.json()
           throw new Error(data.error ?? 'Failed to update case')
         }
+        router.refresh()
         router.push(`/case/${activeCaseId}`)
       }
     } catch (err) {
@@ -426,36 +427,34 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
         </div>
       </section>
 
-      {/* QR Data (create mode only) */}
-      {mode === 'create' && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">QR Code</h2>
-          <div>
-            <label className="block text-sm font-medium mb-1.5">QR Data *</label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                required
-                className="input-field"
-                placeholder="Scan or type the code from the sticker"
-                value={qrdata}
-                onChange={(e) => setQrdata(e.target.value)}
-              />
-              <button type="button" onClick={() => setShowScanner((v) => !v)} className="btn-ghost shrink-0 text-sm">
-                {showScanner ? 'Hide' : 'Scan'}
-              </button>
-            </div>
+      {/* QR Data */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">QR Code</h2>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">QR Data {mode === 'create' ? '*' : ''}</label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              required={mode === 'create'}
+              className="input-field"
+              placeholder="Scan or type the code from the sticker"
+              value={qrdata}
+              onChange={(e) => setQrdata(e.target.value)}
+            />
+            <button type="button" onClick={() => setShowScanner((v) => !v)} className="btn-ghost shrink-0 text-sm">
+              {showScanner ? 'Hide' : 'Scan'}
+            </button>
           </div>
-          {showScanner && (
-            <div className="rounded-xl overflow-hidden border border-white/10">
-              <QRScanner onScan={(result) => { setQrdata(result); setShowScanner(false) }} />
-            </div>
-          )}
-          <p className="text-muted text-xs">
-            This is the raw payload from the physical sticker - not a URL. Legacy Google Keep URLs are also supported.
-          </p>
-        </section>
-      )}
+        </div>
+        {showScanner && (
+          <div className="rounded-xl overflow-hidden border border-white/10">
+            <QRScanner onScan={(result) => { setQrdata(result); setShowScanner(false) }} />
+          </div>
+        )}
+        <p className="text-muted text-xs">
+          This is the raw payload from the physical sticker - not a URL. Legacy Google Keep URLs are also supported.
+        </p>
+      </section>
 
       {/* Gear list */}
       <section className="space-y-3">

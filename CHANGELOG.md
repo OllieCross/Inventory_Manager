@@ -4,6 +4,21 @@ All notable changes to SFXProOne CaseManager are documented here.
 
 ---
 
+## v1.1.2 - 2026-04-07
+
+### Fixed
+
+- **Stale data after edit**: editing a case or device and saving no longer shows old data on the detail page; `router.refresh()` is now called before navigation to invalidate the server component cache
+- **Audit log actions in ALL_CAPS**: audit log entries now display human-readable labels ("Created device", "Updated event", etc.) instead of raw enum strings; time of action is now shown alongside the date (e.g. "07 Apr 2026, 14:32")
+- **Admin panel mobile overflow**: user table and audit log table are now wrapped in `overflow-x-auto` containers so they scroll horizontally on small screens instead of breaking the layout
+- **Changelog page missing header**: the `/changelog` page now renders the standard `Header` component; the "Go Back" button has been removed
+- **Inventory search only found cases**: the search input on the Inventory page now filters across all four sections (Cases, Devices, Consumables, and Standalone Items) simultaneously; case search still highlights matched item names within a case
+- **Consumable edit page missing delete**: the consumable edit form now has a Delete button with a confirmation modal; wired to `DELETE /api/consumables/[id]`
+- **Standalone item edit page missing delete**: the standalone item edit form now has a Delete button with a confirmation modal; wired to `DELETE /api/items/[id]`
+- **Case and device edit forms missing QR code field**: the QR code / QR data field is now visible and editable in edit mode for both cases and devices, not just during creation; `PUT /api/cases/[id]` and `PATCH /api/devices/[id]` now accept the updated QR payload; device PATCH returns 409 if the new QR code is already in use by another device
+
+---
+
 ## v1.1.1 - 2026-04-06
 
 ### Security
