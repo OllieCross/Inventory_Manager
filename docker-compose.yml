@@ -111,7 +111,7 @@ services:
     volumes:
       - postgres_backups:/backups
     tmpfs:
-      -/var/lib/postgresql/data
+      - /var/lib/postgresql/data
     depends_on:
       postgres:
         condition: service_healthy
