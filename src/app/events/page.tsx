@@ -42,7 +42,7 @@ export default async function EventsPage() {
 
         {canEdit && (
           <div className="flex items-center gap-2 flex-wrap">
-            <Link href="/events/new" className="btn-primary text-sm">+ New Event</Link>
+            <Link href="/events/new" className="btn-primary text-sm">+ Event</Link>
             <Link href="/groups" className="btn-primary text-sm">Groups</Link>
           </div>
         )}

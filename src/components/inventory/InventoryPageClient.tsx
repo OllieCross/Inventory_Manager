@@ -144,10 +144,10 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
       {/* Devices outside Cases */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
-          Devices outside Cases <span className="normal-case font-normal">({filteredDevices.length})</span>
+          Devices <span className="normal-case font-normal">({filteredDevices.length})</span>
         </h2>
         {filteredDevices.length === 0 ? (
-          <p className="text-muted text-sm">{q ? 'No devices match.' : 'No devices yet.'}</p>
+          <p className="text-muted text-sm">{q ? 'No devices match.' : 'No devices outside cases yet.'}</p>
         ) : (
           <div className="space-y-2">
             {filteredDevices.map((d) => (
@@ -222,7 +222,7 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
       {/* Items outside Cases */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
-          Items outside Cases <span className="normal-case font-normal">({filteredItems.length})</span>
+          Items <span className="normal-case font-normal">({filteredItems.length})</span>
         </h2>
         {filteredItems.length === 0 ? (
           <p className="text-muted text-sm">{q ? 'No items match.' : 'No items outside cases yet.'}</p>

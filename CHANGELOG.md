@@ -4,6 +4,15 @@ All notable changes to SFXProOne CaseManager are documented here.
 
 ---
 
+## v1.2.1 - 2026-04-07
+
+### Added
+
+- **Admin: delete user**: admins can delete any user account (except their own) from the Admin Panel user table; a two-step inline confirmation ("Delete {name}? Confirm / Cancel") prevents accidental deletion
+- **Login page redesign**: animated gradient orbs (brand blue, indigo, cyan) drift in the background using GPU-composited CSS keyframes; the form card uses glassmorphism (`backdrop-filter: blur`) with a slide-up entrance animation; logo springs in with a subtle overshoot curve; card shakes on failed login; password field gains a show/hide toggle; submit button shows an inline spinner while signing in; all animations respect `prefers-reduced-motion`
+
+---
+
 ## v1.2.0 - 2026-04-07
 
 ### Added

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import RoleSelector from '@/components/admin/RoleSelector'
 import CreateUserButton from '@/components/admin/CreateUserButton'
+import DeleteUserButton from '@/components/admin/DeleteUserButton'
 import { formatDate, formatDateTime } from '@/lib/utils'
 
 const ACTION_LABEL: Record<string, string> = {
@@ -113,6 +114,7 @@ export default async function AdminPage() {
                   <th className="px-4 py-3 font-medium">Email</th>
                   <th className="px-4 py-3 font-medium">Joined</th>
                   <th className="px-4 py-3 font-medium">Role</th>
+                  <th className="px-4 py-3 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
@@ -130,6 +132,11 @@ export default async function AdminPage() {
                         currentRole={user.role}
                         isSelf={user.id === session.user.id}
                       />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {user.id !== session.user.id && (
+                        <DeleteUserButton userId={user.id} userName={user.name ?? user.email} />
+                      )}
                     </td>
                   </tr>
                 ))}
