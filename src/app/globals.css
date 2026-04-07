@@ -103,6 +103,15 @@ html.light input[type="search"]::-webkit-search-cancel-button {
 }
 
 /* Background orbs - only transform/opacity animated for GPU compositing */
+/* Fixed background layer - viewport-locked so orbs never show their edges on overscroll */
+.login-bg {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .login-orb {
   position: absolute;
   border-radius: 50%;
@@ -222,17 +231,6 @@ html.light .login-orb-3 { background: rgb(6 182 212 / 0.09); }
   border-top-color: transparent;
   border-radius: 50%;
   animation: login-spin 600ms linear infinite;
-}
-
-/* Footer credit */
-.login-footer {
-  position: relative;
-  z-index: 10;
-  margin-top: 1.5rem;
-  font-size: 11px;
-  color: rgb(var(--color-foreground) / 0.28);
-  text-align: center;
-  letter-spacing: 0.02em;
 }
 
 /* Honour reduced-motion preference */

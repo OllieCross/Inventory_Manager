@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import ThemeToggle from '@/components/ui/ThemeToggle'
 
 function EyeIcon() {
   return (
@@ -56,10 +57,17 @@ export default function LoginPage() {
 
   return (
     <main className="login-page">
-      {/* Animated gradient orbs */}
-      <div className="login-orb login-orb-1" aria-hidden="true" />
-      <div className="login-orb login-orb-2" aria-hidden="true" />
-      <div className="login-orb login-orb-3" aria-hidden="true" />
+      {/* Viewport-fixed background - never shows edges on overscroll */}
+      <div className="login-bg" aria-hidden="true">
+        <div className="login-orb login-orb-1" />
+        <div className="login-orb login-orb-2" />
+        <div className="login-orb login-orb-3" />
+      </div>
+
+      {/* Theme toggle - top-right corner, above card */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
 
       {/* Glassmorphism card */}
       <div className={`login-card${shake ? ' login-shake' : ''}`}>
@@ -145,8 +153,6 @@ export default function LoginPage() {
           </button>
         </form>
       </div>
-
-      <p className="login-footer">Made by olliecross &copy; 2026</p>
     </main>
   )
 }
