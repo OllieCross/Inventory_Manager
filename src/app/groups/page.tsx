@@ -29,7 +29,13 @@ export default async function GroupsPage() {
         </div>
 
         {groups.length === 0 ? (
-          <p className="text-muted text-sm">No groups yet. Groups are reusable templates for assembling event inventory quickly.</p>
+          <div className="card flex flex-col items-center gap-2 py-8 text-center">
+            <p className="text-muted text-sm font-medium">No groups yet.</p>
+            <p className="text-muted text-xs max-w-xs">Groups let you bundle cases, devices, and consumables into reusable templates for events.</p>
+            {canEdit && (
+              <Link href="/groups/new" className="btn-primary text-sm mt-2">+ New Group</Link>
+            )}
+          </div>
         ) : (
           <div className="space-y-2">
             {groups.map((g) => {

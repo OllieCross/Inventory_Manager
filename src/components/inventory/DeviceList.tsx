@@ -41,8 +41,10 @@ export default function DeviceList({ devices, canEdit }: Props) {
 
   return (
     <div className="space-y-2">
-      {devices.map((d) => (
-        <div key={d.id} className="card flex items-center justify-between gap-4">
+      {devices.map((d) => {
+        const borderColor = d.status === 'Faulty' || d.status === 'Lost' ? 'border-l-red-600' : d.status === 'InRepair' ? 'border-l-yellow-500' : d.status === 'Working' ? 'border-l-green-600' : 'border-l-transparent'
+        return (
+        <div key={d.id} className={`card flex items-center justify-between gap-4 border-l-[3px] ${borderColor}`}>
           <div className="min-w-0">
             <p className="font-medium text-sm truncate">{d.name}</p>
             <p className="text-xs mt-0.5">
@@ -64,7 +66,8 @@ export default function DeviceList({ devices, canEdit }: Props) {
             )}
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

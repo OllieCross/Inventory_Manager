@@ -5,6 +5,7 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import ThemeToggle from '@/components/ui/ThemeToggle'
+import { useTheme } from '@/hooks/useTheme'
 
 function EyeIcon() {
   return (
@@ -32,6 +33,8 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [shake, setShake] = useState(false)
+  const theme = useTheme()
+  const logoSrc = theme === 'dark' ? '/logo.jpg' : '/logo2.jpg'
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -64,17 +67,17 @@ export default function LoginPage() {
         <div className="login-orb login-orb-3" />
       </div>
 
-      {/* Theme toggle - top-right corner, above card */}
-      <div className="absolute top-4 right-4 z-20">
-        <ThemeToggle />
-      </div>
-
       {/* Glassmorphism card */}
-      <div className={`login-card${shake ? ' login-shake' : ''}`}>
+      <div className={`login-card${shake ? ' login-shake' : ''}`} style={{ position: 'relative' }}>
+        {/* Theme toggle - upper-right corner of card */}
+        <div className="absolute top-3 right-3 [&_button]:p-1.5 [&_button]:bg-transparent [&_button]:hover:bg-foreground/5">
+          <ThemeToggle />
+        </div>
+
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Image
-            src="/logo.jpg"
+            src={logoSrc}
             alt="SFX Pro One"
             width={88}
             height={88}

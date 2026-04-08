@@ -26,6 +26,14 @@ const STATUS_COLORS: Record<string, string> = {
   RentedToFriend: 'text-blue-400',
 }
 
+function relativeTime(date: Date): string {
+  const months = Math.round((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24 * 30.44))
+  if (months < 1) return 'less than a month ago'
+  if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`
+  const years = Math.round(months / 12)
+  return `${years} year${years !== 1 ? 's' : ''} ago`
+}
+
 export default async function DevicePage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) redirect('/login')
@@ -91,8 +99,11 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
             </p>
           </div>
           {canEdit && (
-            <Link href={`/devices/${id}/edit`} className="btn-primary text-sm shrink-0">
-              Edit Device
+            <Link href={`/devices/${id}/edit`} className="btn-ghost p-2 rounded-lg shrink-0" aria-label="Edit device">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
             </Link>
           )}
         </div>
@@ -112,7 +123,7 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
           {device.purchaseDate && (
             <div className="flex gap-3">
               <span className="text-muted w-28 shrink-0">Purchased</span>
-              <span>{formatDate(device.purchaseDate)}</span>
+              <span>{formatDate(device.purchaseDate)} <span className="text-muted">({relativeTime(device.purchaseDate)})</span></span>
             </div>
           )}
           {device.case && (
@@ -182,7 +193,7 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
           )}
           {canEdit && (
             <div className="mt-3">
-              <Link href={`/devices/${id}/edit`} className="text-brand text-sm hover:underline">
+              <Link href={`/devices/${id}/edit`} className="btn-secondary w-full text-sm text-center block">
                 + Add logbook entry
               </Link>
             </div>
@@ -195,15 +206,15 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
           {recentEvents.length === 0 ? (
             <p className="text-muted text-sm">No recent events.</p>
           ) : (
-            <div className="card divide-y divide-foreground/10">
+            <div className="card divide-y divide-foreground/10 p-0 overflow-hidden">
               {recentEvents.map((ev) => (
-                <div key={ev.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <Link key={ev.id} href={`/events/${ev.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-foreground/5 transition-colors">
                   <div>
                     <p className="text-sm font-medium">{ev.name}</p>
                     <p className="text-xs text-muted mt-0.5">{formatDate(ev.startDate)}</p>
                   </div>
-                  <Link href={`/events/${ev.id}`} className="text-xs text-brand hover:underline shrink-0">View</Link>
-                </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
               ))}
             </div>
           )}

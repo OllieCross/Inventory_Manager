@@ -75,8 +75,11 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
             )}
           </div>
           {canEdit && (
-            <Link href={`/editor/${id}`} className="btn-primary text-sm shrink-0">
-              Edit Case
+            <Link href={`/editor/${id}`} className="btn-ghost p-2 rounded-lg shrink-0" aria-label="Edit case">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
             </Link>
           )}
         </div>
@@ -150,17 +153,22 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
         <section>
           <h2 className="text-lg font-semibold mb-3">Recent Events</h2>
           {recentEvents.length === 0 ? (
-            <p className="text-muted text-sm">No recent events.</p>
+            <div className="card flex flex-col items-center gap-2 py-6 text-center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              <p className="text-muted text-sm">No events yet - this case has not been assigned to any events.</p>
+            </div>
           ) : (
-            <div className="card divide-y divide-foreground/10">
+            <div className="card divide-y divide-foreground/10 p-0 overflow-hidden">
               {recentEvents.map((ev) => (
-                <div key={ev.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <Link key={ev.id} href={`/events/${ev.id}`} className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-foreground/5 transition-colors">
                   <div>
                     <p className="text-sm font-medium">{ev.name}</p>
                     <p className="text-xs text-muted mt-0.5">{formatDate(ev.startDate)}</p>
                   </div>
-                  <Link href={`/events/${ev.id}`} className="text-xs text-brand hover:underline shrink-0">View</Link>
-                </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
               ))}
             </div>
           )}

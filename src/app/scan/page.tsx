@@ -92,8 +92,8 @@ export default function ScanPage() {
         )}
 
         {/* Manual input fallback */}
-        <form onSubmit={handleManualSubmit} className="space-y-2">
-          <label className="block text-sm font-medium text-muted">Or enter code manually</label>
+        <form onSubmit={handleManualSubmit} className="card space-y-3 bg-foreground/[0.03]">
+          <label className="block text-sm font-medium">Or enter code manually</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -105,7 +105,7 @@ export default function ScanPage() {
             <button
               type="submit"
               disabled={!manualInput.trim() || status === 'loading'}
-              className="btn-primary shrink-0"
+              className="btn-primary shrink-0 min-w-[64px] min-h-[44px]"
             >
               Go
             </button>

@@ -121,6 +121,9 @@ export default function EventForm({
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [clientOpen, setClientOpen] = useState(
+    !!(initialData?.clientName || initialData?.clientPhone || initialData?.clientEmail)
+  )
 
   // ---------- Helpers ----------
 
@@ -324,7 +327,7 @@ export default function EventForm({
     <form onSubmit={handleSubmit} className="space-y-8">
 
       {/* Details */}
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Details</h2>
         <div>
           <label className="block text-sm font-medium mb-1.5">Event Name *</label>
@@ -354,28 +357,42 @@ export default function EventForm({
         </div>
       </section>
 
-      {/* Client */}
-      <section className="space-y-4">
-        <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Client</h2>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Client Name</label>
-          <input type="text" className="input-field" placeholder="e.g. Acme Corp"
-            value={clientName} onChange={(e) => setClientName(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Phone</label>
-          <input type="tel" className="input-field" placeholder="+43 123 456 789"
-            value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Email</label>
-          <input type="email" className="input-field" placeholder="client@example.com"
-            value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
-        </div>
+      {/* Client - collapsible */}
+      <section className="card space-y-4">
+        <button
+          type="button"
+          onClick={() => setClientOpen(v => !v)}
+          className="flex items-center justify-between w-full text-left"
+        >
+          <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Client Details (optional)</h2>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+            className={`text-muted transition-transform duration-150 ${clientOpen ? 'rotate-180' : ''}`}>
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        {clientOpen && (
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Client Name</label>
+              <input type="text" className="input-field" placeholder="e.g. Acme Corp"
+                value={clientName} onChange={(e) => setClientName(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Phone</label>
+              <input type="tel" className="input-field" placeholder="+43 123 456 789"
+                value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Email</label>
+              <input type="email" className="input-field" placeholder="client@example.com"
+                value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Status */}
-      <section className="space-y-4">
+      <section className="card space-y-4">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Status</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -403,9 +420,9 @@ export default function EventForm({
       </section>
 
       {/* Crew */}
-      <section className="space-y-3">
+      <section className="card space-y-3">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Crew</h2>
-        <div className="card flex gap-2">
+        <div className="flex gap-2">
           <select className="input-field flex-1" value={crewId} onChange={(e) => setCrewId(e.target.value)}>
             <option value="">-- Select crew member --</option>
             {availableCrew.map((u) => (
@@ -427,9 +444,9 @@ export default function EventForm({
 
       {/* Add Group Template */}
       {allGroups.length > 0 && (
-        <section className="space-y-3">
+        <section className="card space-y-3">
           <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Add Group Template</h2>
-          <div className="card flex gap-2">
+          <div className="flex gap-2">
             <select className="input-field flex-1" value={groupId} onChange={(e) => setGroupId(e.target.value)}>
               <option value="">-- Select group --</option>
               {allGroups.map((g) => (
@@ -445,14 +462,14 @@ export default function EventForm({
               {addingGroup ? 'Adding...' : 'Add Group'}
             </button>
           </div>
-          <p className="text-xs text-muted">Expands the group&apos;s cases, devices, items, and consumables into the inventory below.</p>
+          <p className="text-sm text-foreground/70">Expands the group&apos;s cases, devices, items, and consumables into the inventory below.</p>
         </section>
       )}
 
       {/* Inventory */}
-      <section className="space-y-3">
+      <section className="card space-y-3">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Inventory</h2>
-        <div className="card space-y-3">
+        <div className="space-y-3">
           {/* Type tabs */}
           <div className="flex gap-2 flex-wrap">
             {(['case', 'device', 'item', 'consumable'] as const).map((t) => (
@@ -541,11 +558,11 @@ export default function EventForm({
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      <div className="flex gap-3">
-        <button type="submit" disabled={saving} className="btn-primary">
+      <div className="flex flex-col gap-2">
+        <button type="submit" disabled={saving} className="btn-primary w-full">
           {saving ? 'Saving...' : mode === 'create' ? 'Create Event' : 'Save Changes'}
         </button>
-        <button type="button" onClick={() => router.back()} className="btn-ghost">Cancel</button>
+        <button type="button" onClick={() => router.back()} className="btn-ghost w-full">Cancel</button>
       </div>
     </form>
   )

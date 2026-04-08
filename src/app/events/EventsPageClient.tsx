@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 
 const EVENT_STATUS_LABELS: Record<string, string> = {
@@ -15,7 +16,7 @@ const INVOICE_LABELS: Record<string, string> = {
   DepositNotYetPaid: 'Deposit Not Yet Paid', NotPaidInFull: 'Not Paid in Full',
 }
 const INVOICE_COLORS: Record<string, string> = {
-  Paid: 'text-green-400', NotPaid: 'text-red-400', DepositPaid: 'text-yellow-400',
+  Paid: 'text-green-400', NotPaid: 'text-amber-500', DepositPaid: 'text-yellow-400',
   DepositNotYetPaid: 'text-yellow-400', NotPaidInFull: 'text-orange-400',
 }
 
@@ -40,12 +41,15 @@ type Props = {
 
 function formatStartDateTime(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
+
+type FilterOption = 'all' | 'upcoming' | 'completed'
 
 export default function EventsPageClient({ events, canEdit, userId, todayISO, tomorrowISO }: Props) {
   const todayStart = new Date(todayISO).getTime()
   const tomorrowEnd = new Date(tomorrowISO).getTime()
+  const [filter, setFilter] = useState<FilterOption>('all')
 
   function isHighlighted(event: EventRow) {
     const start = new Date(event.startDate).getTime()
@@ -54,35 +58,75 @@ export default function EventsPageClient({ events, canEdit, userId, todayISO, to
     return isUserCrew && isTodayOrTomorrow
   }
 
-  const sorted = [...events].sort((a, b) => {
+  const filtered = events.filter((e) => {
+    if (filter === 'upcoming') return e.status === 'Planned' || e.status === 'Confirmed'
+    if (filter === 'completed') return e.status === 'Completed' || e.status === 'Cancelled'
+    return true
+  })
+
+  const sorted = [...filtered].sort((a, b) => {
     const aH = isHighlighted(a) ? 0 : 1
     const bH = isHighlighted(b) ? 0 : 1
     return aH - bH
   })
 
+  const FILTERS: { key: FilterOption; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'completed', label: 'Completed' },
+  ]
+
   return (
-    <div className="space-y-3">
-      {sorted.map((event) => {
+    <div className="space-y-4">
+      {/* Filter bar */}
+      <div className="flex gap-1.5">
+        {FILTERS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              filter === key ? 'bg-brand text-white' : 'text-muted hover:text-foreground hover:bg-foreground/5'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+      <div className="space-y-3">
+      {sorted.length === 0 ? (
+        <div className="card flex flex-col items-center justify-center py-12 gap-3 text-center">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted/50">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <div>
+            <p className="text-sm font-medium">{filter === 'all' ? 'No events yet' : `No ${filter} events`}</p>
+            <p className="text-xs text-muted mt-0.5">{filter === 'all' ? 'Create your first event with the + button.' : 'Try switching to a different filter.'}</p>
+          </div>
+        </div>
+      ) : sorted.map((event) => {
         const highlighted = isHighlighted(event)
         return (
           <div
             key={event.id}
-            className="card space-y-2"
+            className="card relative space-y-2"
             style={highlighted ? {
               boxShadow: '0 0 0 1px rgba(255,255,255,0.85), 0 0 6px 1px rgba(255,255,255,0.3)',
             } : undefined}
           >
+            {/* Full-card tap target */}
+            <Link href={`/events/${event.id}`} className="absolute inset-0 rounded-xl" aria-label={`View ${event.name}`} />
+
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="font-medium truncate">{event.name}</p>
                 <p className="text-sm text-muted truncate">{event.venueName}{event.location ? ` - ${event.location}` : ''}</p>
               </div>
-              <div className="flex gap-2 shrink-0">
-                <Link href={`/events/${event.id}`} className="btn-ghost text-sm px-3 py-1.5">View</Link>
-                {canEdit && (
-                  <Link href={`/events/${event.id}/edit`} className="btn-ghost text-sm px-3 py-1.5">Edit</Link>
-                )}
-              </div>
+              {canEdit && (
+                <Link href={`/events/${event.id}/edit`} className="relative z-10 btn-ghost text-sm px-3 py-1.5">Edit</Link>
+              )}
             </div>
 
             <div className="flex items-center gap-4 text-xs flex-wrap">
@@ -110,6 +154,7 @@ export default function EventsPageClient({ events, canEdit, userId, todayISO, to
           </div>
         )
       })}
+      </div>
     </div>
   )
 }

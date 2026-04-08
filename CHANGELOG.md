@@ -4,6 +4,114 @@ All notable changes to SFXProOne CaseManager are documented here.
 
 ---
 
+## v1.2.8 - 2026-04-08
+
+### Changed
+
+- **Typography - base font size**: raised from 14px (Tailwind default) to 15px globally so body row text meets the design token spec without per-component overrides
+- **Typography utilities**: added `.text-page-title` (26px/700), `.text-section-label` (11px/600/0.08em tracking), `.text-body-row` (15px/500), and `.text-metadata` (12px/400) as reusable component classes in globals.css
+
+---
+
+## v1.2.7 - 2026-04-08
+
+### Changed
+
+- **Recycle Bin - empty state**: upgraded from plain "Recycle bin is empty." text to a card with a trash icon, "Nothing here" heading, and "Deleted items will appear for 30 days before expiring." description
+- **Events list - empty state**: upgraded from plain text to a card with a calendar icon and context-aware copy ("No events yet / Create your first event" for All filter; "No upcoming/completed events / Try switching to a different filter" for filtered views)
+
+---
+
+## v1.2.6 - 2026-04-08
+
+### Changed
+
+- **Event form - section cards**: all form sections (Details, Client, Status, Crew, Group Template, Inventory) are now wrapped in individual card panels, giving each section a distinct surface and clear visual separation
+- **Event form - client section accordion**: the Client section is collapsible; a chevron button toggles it open/closed, keeping the form compact when client info is not needed
+- **Event form - submit buttons**: the primary submit and Cancel buttons are now stacked full-width at the bottom of the form (Cancel as ghost); consistent with the Profile and Create User forms
+- **Event form - group template hint text**: helper text upgraded from `text-xs text-muted` to `text-sm text-foreground/70` for improved readability
+- **Create User modal - password visibility toggles**: password and confirm-password fields now have eye-icon show/hide toggles; real-time match indicator appears below the confirm field
+- **Create User modal - backdrop**: updated to `bg-black/60 backdrop-blur-sm`; action buttons stacked full-width (primary then ghost Cancel)
+- **Profile form - independent sections**: name and password are now two separate `<form>` elements, each with its own save button, success/error feedback, and 3s auto-dismiss on success
+- **Profile form - password visibility toggles**: all three password fields (current, new, confirm) have eye-icon show/hide toggles; real-time match indicator appears below confirm field
+
+---
+
+## v1.2.5 - 2026-04-08
+
+### Added
+
+- **Inventory - FAB speed-dial**: the 4 individual add buttons (Case, Item, Device, Consumable) are replaced by a fixed-position `+` floating action button at the bottom-right; tapping it expands a speed-dial menu of 4 options; closes on outside click or selection; saves ~60px of vertical space above the inventory list
+- **Events list - filter bar**: new All / Upcoming / Completed filter bar below the page header; active filter uses the same filled brand pill as the nav; filtered empty state handled gracefully
+
+### Changed
+
+- **Inventory - section count badges**: section heading counts (`Cases (14)`) are now rendered as small rounded badge pills instead of plain parenthetical text
+- **Scan - manual input card**: the "Or enter code manually" section is now grouped inside a subtle card panel; the "Go" button has a `min-w-[64px] min-h-[44px]` tap target
+- **Case detail - edit button**: "Edit Case" text button replaced with a pencil icon button in the header
+- **Case detail - empty recent events**: improved from plain "No recent events." text to a card with a calendar icon and descriptive copy
+- **Device detail - edit button**: "Edit Device" text button replaced with a pencil icon button in the header
+- **Device detail - logbook entry button**: "+ Add logbook entry" text link replaced with a full-width `btn-secondary` outlined button
+- **Device detail - purchase date**: now displays as "10 Dec 2025 (4 months ago)" showing both absolute and relative time
+- **Events list - date format**: event dates now include day of week ("Thu 31 Dec 2026, 16:00") for faster mental parsing
+- **Event detail - edit button**: "Edit" text link replaced with a pencil icon button in the header
+- **Issues - report form labels**: "Entity Type" label changed to "What are you reporting an issue with?"; options changed to "A device", "A case", "A stored item"; toggle button switches to ghost style when the form is open (Cancel)
+- **Issues - reported issues empty state**: the Reported Issues section is now always visible with an empty state message instead of being hidden when empty
+- **Admin - CreateUser placement**: "+ Create User" button moved below the user table as a prominent standalone element; Recycle Bin kept as a ghost link in the header area
+- **Admin - audit log date grouping**: audit log rows are now grouped under sticky date headers (Today, Yesterday, or full date); each row shows time-only since the date is in the section header
+- **Groups - empty state**: upgraded from plain text to a card with title, description, and a "+ New Group" shortcut button
+
+---
+
+## v1.2.4 - 2026-04-08
+
+### Changed
+
+- **Header - user avatar dropdown**: replaced the flat ThemeToggle + role badge + Sign Out row with a user avatar menu; tapping the avatar (initial + name) opens a dropdown containing Admin Panel (ADMIN only), Profile, Theme toggle (shows current value), and Sign Out (red, separated by a divider); dropdown closes on outside click
+- **Header - active nav indicator**: active nav link now uses a solid filled pill (`bg-brand text-white`) instead of the previous subtle `bg-foreground/10` tint, making the current section immediately obvious
+- **Header - responsive collapse below 390px**: primary nav links are hidden on very narrow screens; a hamburger icon replaces them and toggles a full-width drawer below the header bar; the icon swaps to an X when open; the drawer closes automatically on route change
+
+---
+
+## v1.2.3 - 2026-04-08
+
+### Added
+
+- **`btn-secondary` utility class**: new global CSS class (outlined brand border) for secondary actions across the app
+- **Semantic status colour tokens**: `:root` CSS variables for all status colours (`--status-working`, `--status-warning`, `--status-faulty`, `--status-planned`, `--status-completed`, `--status-paid`, `--status-pending`, `--status-overdue`) ensuring consistent meaning across every screen
+
+### Changed
+
+- **Input focus ring**: upgraded from `ring-1` to `ring-2 ring-brand/50` on all `input-field` elements for better visibility when a field is focused
+- **Inventory - all rows tappable**: cases, devices, consumables, and items sections now use full-row `<Link>` cards with a `>` chevron; the standalone "View" button has been removed from every inventory row
+- **Events list - full card tappable**: each event card now has a full-card invisible overlay link to the event detail; the "View" button is removed; the "Edit" button is kept and sits above the overlay
+- **Event detail - cases and devices rows tappable**: case and device rows inside an event detail now navigate to the respective detail page on tap; replaced "View" text link with `>` chevron
+- **Case detail / Device detail - recent event rows tappable**: recent event rows are now full-row links with `>` chevron instead of a small "View" text link
+- **Invoice "Not Paid" colour**: changed from `text-red-400` to `text-amber-500` so it no longer conflicts with the Faulty device red used on inventory rows
+
+---
+
+## v1.2.2 - 2026-04-08
+
+### Added
+
+- **Theme-aware logo**: logo swaps between the dark (`logo2.jpg`) and light (`logo.jpg`) variant instantly when the theme is toggled, on both the login page and the header
+- **login: removed footer**: The login page now doesnt display footer with authors socials and release notes
+- **Changelog: "Latest" badge**: the most recent version header on the Changelog page now displays a blue "Latest" badge so the current version is immediately identifiable
+- **`btn-danger` utility class**: new global CSS class (`bg-red-600 text-white h-11 rounded-lg font-semibold`) for consistent destructive action buttons across the app
+
+### Changed
+
+- **Admin: role dropdown**: role selector in the Admin Panel user table now uses theme-aware styles (`bg-surface text-foreground`) instead of a hardcoded dark background; renders correctly in both light and dark mode
+- **Destructive buttons - solid red**: all confirm/delete buttons (ConfirmModal, Purge Expired) changed from pastel `bg-red-500/80` to solid `bg-red-600 hover:bg-red-700 text-white`; destructive intent is now unambiguous
+- **Recycle Bin - Purge Expired confirmation**: clicking "Purge Expired" now opens a confirmation modal ("This will permanently delete all expired items. This cannot be undone.") before executing the irreversible purge
+- **Event Detail - tappable phone/email**: client phone and email fields are now rendered as `tel:` and `mailto:` links so users can call or email the client directly from the event detail page
+- **Inventory - consumable stock number**: stock quantity is now displayed as `font-semibold` text (up from tiny muted `text-xs`) so the value is immediately readable alongside the status bar
+- **Inventory - device status left border**: device rows now display a 3px left border colour-coded by status - green for Working, yellow for In Repair, red for Faulty/Lost - giving at-a-glance health indication when scanning the list
+- **Inventory - hide zero-value case metadata**: case row metadata (items · photos · docs) now only shows counts greater than zero; rows with no attachments no longer display noisy "0 items · 0 photos · 0 docs"
+
+---
+
 ## v1.2.1 - 2026-04-07
 
 ### Added

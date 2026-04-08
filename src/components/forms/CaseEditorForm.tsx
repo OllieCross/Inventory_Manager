@@ -163,7 +163,7 @@ async function uploadDocumentFile(
 export default function CaseEditorForm({ mode, caseId, initialData, allCases = [] }: Props) {
   const router = useRouter()
 
-  const [activeCaseId, setActiveCaseId] = useState(caseId)
+  const [activeCaseId] = useState(caseId)
 
   const [name, setName] = useState(initialData?.name ?? '')
   const [description, setDescription] = useState(initialData?.description ?? '')
@@ -333,7 +333,8 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
         const res = await fetch('/api/cases', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, description, qrdata, items: items.map(({ id: _id, ...rest }) => rest) }),
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          body: JSON.stringify({ name, description, qrdata, items: items.map(({ id: _itemId, ...rest }) => rest) }),
         })
         if (!res.ok) {
           const data = await res.json()

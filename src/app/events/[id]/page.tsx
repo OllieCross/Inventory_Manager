@@ -17,7 +17,7 @@ const INVOICE_LABELS: Record<string, string> = {
   DepositNotYetPaid: 'Deposit Not Yet Paid', NotPaidInFull: 'Not Paid in Full',
 }
 const INVOICE_COLORS: Record<string, string> = {
-  Paid: 'text-green-400', NotPaid: 'text-red-400', DepositPaid: 'text-yellow-400',
+  Paid: 'text-green-400', NotPaid: 'text-amber-500', DepositPaid: 'text-yellow-400',
   DepositNotYetPaid: 'text-yellow-400', NotPaidInFull: 'text-orange-400',
 }
 const DEVICE_STATUS_LABELS: Record<string, string> = {
@@ -25,9 +25,6 @@ const DEVICE_STATUS_LABELS: Record<string, string> = {
   Retired: 'Retired', Lost: 'Lost', RentedToFriend: 'Rented to Friend',
 }
 
-function formatDate(d: Date) {
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-}
 function formatDateTime(d: Date) {
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
@@ -72,7 +69,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <p className="text-muted text-sm mt-0.5">{event.venueName}{event.location ? ` - ${event.location}` : ''}</p>
           </div>
           {canEdit && (
-            <Link href={`/events/${id}/edit`} className="btn-ghost text-sm shrink-0">Edit</Link>
+            <Link href={`/events/${id}/edit`} className="btn-ghost p-2 rounded-lg shrink-0" aria-label="Edit event">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </Link>
           )}
         </div>
 
@@ -86,8 +88,16 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <span className={INVOICE_COLORS[event.invoiceStatus] ?? ''}>{INVOICE_LABELS[event.invoiceStatus] ?? event.invoiceStatus}</span>
           } />
           {event.clientName && <InfoRow label="Client" value={event.clientName} />}
-          {event.clientPhone && <InfoRow label="Phone" value={event.clientPhone} />}
-          {event.clientEmail && <InfoRow label="Email" value={event.clientEmail} />}
+          {event.clientPhone && (
+            <InfoRow label="Phone" value={
+              <a href={`tel:${event.clientPhone}`} className="text-brand hover:underline">{event.clientPhone}</a>
+            } />
+          )}
+          {event.clientEmail && (
+            <InfoRow label="Email" value={
+              <a href={`mailto:${event.clientEmail}`} className="text-brand hover:underline">{event.clientEmail}</a>
+            } />
+          )}
           {event.comments && <InfoRow label="Notes" value={event.comments} />}
         </div>
 
@@ -111,10 +121,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Cases ({event.cases.length})</h2>
             <div className="space-y-1">
               {event.cases.map(({ case: c }) => (
-                <div key={c.id} className="card flex items-center justify-between gap-3 py-2 px-3">
+                <Link key={c.id} href={`/case/${c.id}`} className="card flex items-center justify-between gap-3 py-2 px-3 hover:bg-foreground/5 transition-colors">
                   <p className="text-sm truncate">{c.name}</p>
-                  <Link href={`/case/${c.id}`} className="text-xs text-brand hover:underline shrink-0">View</Link>
-                </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
               ))}
             </div>
           </section>
@@ -126,13 +136,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Devices ({event.devices.length})</h2>
             <div className="space-y-1">
               {event.devices.map(({ device }) => (
-                <div key={device.id} className="card flex items-center justify-between gap-3 py-2 px-3">
+                <Link key={device.id} href={`/devices/${device.id}`} className="card flex items-center justify-between gap-3 py-2 px-3 hover:bg-foreground/5 transition-colors">
                   <div>
                     <p className="text-sm">{device.name}</p>
                     <p className="text-xs text-muted">{DEVICE_STATUS_LABELS[device.status] ?? device.status}</p>
                   </div>
-                  <Link href={`/devices/${device.id}`} className="text-xs text-brand hover:underline shrink-0">View</Link>
-                </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
               ))}
             </div>
           </section>

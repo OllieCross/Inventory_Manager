@@ -11,7 +11,7 @@ function safeStop(scanner: ScannerType | null) {
   if (!scanner) return
   try {
     scanner.stop().catch(() => {})
-  } catch (_) {
+  } catch {
     // html5-qrcode throws a string (not an Error) when stop() is called
     // while the scanner is not running - safe to ignore
   }

@@ -65,8 +65,12 @@ export default function InventoryList({ cases, canEdit }: Props) {
               <div className="min-w-0">
                 <p className="font-medium text-sm truncate">{c.name}</p>
                 <p className="text-muted text-xs mt-0.5">
-                  {c._count.items} items &middot; {c._count.images} photos &middot; {c._count.documents} docs
-                  &middot; by {c.createdBy.name}
+                  {[
+                    c._count.items > 0 && `${c._count.items} items`,
+                    c._count.images > 0 && `${c._count.images} photos`,
+                    c._count.documents > 0 && `${c._count.documents} docs`,
+                    `by ${c.createdBy.name}`,
+                  ].filter(Boolean).join(' · ')}
                 </p>
                 {c.matchedItems.length > 0 && (
                   <ul className="mt-1 space-y-0.5">

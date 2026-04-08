@@ -69,7 +69,10 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
     <main className="max-w-3xl mx-auto px-4 py-6 space-y-6 pb-16">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold">Issues</h1>
-        <button className="btn-primary text-sm" onClick={() => setShowForm(v => !v)}>
+        <button
+          className={showForm ? 'btn-ghost text-sm' : 'btn-primary text-sm'}
+          onClick={() => setShowForm(v => !v)}
+        >
           {showForm ? 'Cancel' : '+ Report Issue'}
         </button>
       </div>
@@ -78,15 +81,15 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
         <form onSubmit={handleSubmit} className="card space-y-4">
           <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Report an Issue</h2>
           <div>
-            <label className="block text-sm font-medium mb-1">Entity Type</label>
+            <label className="block text-sm font-medium mb-1">What are you reporting an issue with?</label>
             <select
               className="input-field"
               value={entityType}
               onChange={e => { setEntityType(e.target.value as typeof entityType); setEntityId('') }}
             >
-              <option value="device">Device</option>
-              <option value="case">Case</option>
-              <option value="item">Item</option>
+              <option value="device">A device</option>
+              <option value="case">A case</option>
+              <option value="item">A stored item</option>
             </select>
           </div>
           <div>
@@ -155,11 +158,13 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
       </section>
 
       {/* Manual Issues */}
-      {manualIssues.length > 0 && (
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
-            Reported Issues ({manualIssues.length})
-          </h2>
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
+          Reported Issues ({manualIssues.length})
+        </h2>
+        {manualIssues.length === 0 ? (
+          <p className="text-muted text-sm card py-4 text-center">No manual issues reported. Use + Report Issue to log a problem.</p>
+        ) : (
           <div className="space-y-2">
             {manualIssues.map(i => {
               const entity = i.device ?? i.case ?? i.item
@@ -180,8 +185,8 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
               )
             })}
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </main>
   )
 }

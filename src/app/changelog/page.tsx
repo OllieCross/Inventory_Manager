@@ -11,7 +11,13 @@ export const metadata = {
 export default function ChangelogPage() {
   const filePath = path.join(process.cwd(), 'CHANGELOG.md')
   const markdown = readFileSync(filePath, 'utf-8')
-  const html = DOMPurify.sanitize(marked(markdown) as string)
+  const rawHtml = marked(markdown) as string
+  // Inject a "Latest" badge into the first <h2> (most recent version header)
+  const htmlWithBadge = rawHtml.replace(
+    /(<h2[^>]*>)(.*?)(<\/h2>)/,
+    '$1$2 <span style="font-size:11px;font-weight:600;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:9999px;vertical-align:middle;margin-left:8px;letter-spacing:0.04em">Latest</span>$3'
+  )
+  const html = DOMPurify.sanitize(htmlWithBadge)
 
   return (
     <>

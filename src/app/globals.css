@@ -21,12 +21,26 @@ html.light {
   --color-muted: 107 114 128;
 }
 
+/* Semantic status colours — shared across themes */
+:root {
+  --status-working:   #16a34a;  /* green-600 */
+  --status-warning:   #ca8a04;  /* yellow-600 */
+  --status-faulty:    #dc2626;  /* red-600 */
+  --status-planned:   #2563eb;  /* blue-600 */
+  --status-completed: #6b7280;  /* gray-500 */
+  --status-paid:      #16a34a;  /* green-600 */
+  --status-pending:   #d97706;  /* amber-600 */
+  --status-overdue:   #dc2626;  /* red-600, invoices only */
+}
+
 @layer base {
   html {
     @apply bg-background text-foreground;
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Body row default */
+    font-size: 15px;
   }
 
   body {
@@ -53,21 +67,50 @@ html.light {
            disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
+  .btn-secondary {
+    @apply bg-transparent border border-brand text-brand font-medium px-4 py-2 rounded-lg
+           hover:bg-brand/10 active:scale-95 transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
   .btn-ghost {
     @apply text-foreground/70 font-medium px-4 py-2 rounded-lg
            hover:bg-foreground/5 active:scale-95 transition-all duration-150;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white font-semibold px-4 py-2 rounded-lg
+           hover:bg-red-700 active:scale-95 transition-all duration-150
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .input-field {
     @apply w-full bg-surface border border-foreground/10 text-foreground
            rounded-lg px-3 py-2.5 text-sm
            placeholder:text-muted
-           focus:outline-none focus:border-brand focus:ring-1 focus:ring-brand
+           focus:outline-none focus:border-brand focus:ring-2 focus:ring-brand/50
            transition-colors duration-150;
   }
 
   .card {
     @apply bg-surface border border-foreground/10 rounded-xl p-4;
+  }
+
+  /* Typography scale */
+  .text-page-title {
+    @apply text-[26px] font-bold leading-tight tracking-tight;
+  }
+
+  .text-section-label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+
+  .text-body-row {
+    @apply text-[15px] font-medium;
+  }
+
+  .text-metadata {
+    @apply text-[12px] font-normal text-muted;
   }
 }
 

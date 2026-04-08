@@ -6,7 +6,7 @@ import Header from '@/components/layout/Header'
 import RoleSelector from '@/components/admin/RoleSelector'
 import CreateUserButton from '@/components/admin/CreateUserButton'
 import DeleteUserButton from '@/components/admin/DeleteUserButton'
-import { formatDate, formatDateTime } from '@/lib/utils'
+import { formatDate } from '@/lib/utils'
 
 const ACTION_LABEL: Record<string, string> = {
   CASE_CREATED:             'Created case',
@@ -100,11 +100,10 @@ export default async function AdminPage() {
               <h1 className="text-xl font-bold mb-1">Admin Panel</h1>
               <p className="text-sm text-gray-400">Manage users and their access roles.</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Link href="/admin/recycle-bin" className="btn-ghost text-sm">Recycle Bin</Link>
-              <CreateUserButton />
-            </div>
+            <Link href="/admin/recycle-bin" className="btn-ghost text-sm">Recycle Bin</Link>
           </div>
+
+          <CreateUserButton />
 
           <div className="card overflow-hidden p-0 overflow-x-auto">
             <table className="w-full text-sm">
@@ -153,39 +152,64 @@ export default async function AdminPage() {
             <div className="card flex items-center justify-center py-12 text-gray-500 text-sm">
               No events recorded yet.
             </div>
-          ) : (
-            <div className="card overflow-hidden p-0 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-foreground/10 text-left text-gray-400">
-                    <th className="px-4 py-3 font-medium">When</th>
-                    <th className="px-4 py-3 font-medium">User</th>
-                    <th className="px-4 py-3 font-medium">Action</th>
-                    <th className="px-4 py-3 font-medium">Detail</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditLogs.map((log, i) => (
-                    <tr
-                      key={log.id}
-                      className={i < auditLogs.length - 1 ? 'border-b border-foreground/5' : ''}
-                    >
-                      <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
-                        {formatDateTime(log.createdAt)}
-                      </td>
-                      <td className="px-4 py-3 font-medium">{log.user.name}</td>
-                      <td className="px-4 py-3 text-gray-300">
-                        {ACTION_LABEL[log.action] ?? log.action}
-                      </td>
-                      <td className="px-4 py-3 text-gray-400 truncate max-w-[200px]">
-                        {auditDetail(log.action, log.meta as Record<string, unknown> | null)}
-                      </td>
+          ) : (() => {
+            const today = new Date(); today.setHours(0,0,0,0)
+            const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1)
+            function dayLabel(d: Date) {
+              const day = new Date(d); day.setHours(0,0,0,0)
+              if (day.getTime() === today.getTime()) return 'Today'
+              if (day.getTime() === yesterday.getTime()) return 'Yesterday'
+              return day.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            }
+            let lastLabel = ''
+            return (
+              <div className="card overflow-hidden p-0 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-foreground/10 text-left text-gray-400">
+                      <th className="px-4 py-3 font-medium">When</th>
+                      <th className="px-4 py-3 font-medium">User</th>
+                      <th className="px-4 py-3 font-medium">Action</th>
+                      <th className="px-4 py-3 font-medium">Detail</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  </thead>
+                  <tbody>
+                    {auditLogs.map((log, i) => {
+                      const label = dayLabel(log.createdAt)
+                      const showLabel = label !== lastLabel
+                      lastLabel = label
+                      return (
+                        <>
+                          {showLabel && (
+                            <tr key={`label-${label}`}>
+                              <td colSpan={4} className="px-4 pt-3 pb-1 text-xs font-semibold text-muted uppercase tracking-wider bg-foreground/[0.02]">
+                                {label}
+                              </td>
+                            </tr>
+                          )}
+                          <tr
+                            key={log.id}
+                            className={i < auditLogs.length - 1 ? 'border-b border-foreground/5' : ''}
+                          >
+                            <td className="px-4 py-3 text-gray-400 whitespace-nowrap">
+                              {log.createdAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="px-4 py-3 font-medium">{log.user.name}</td>
+                            <td className="px-4 py-3 text-gray-300">
+                              {ACTION_LABEL[log.action] ?? log.action}
+                            </td>
+                            <td className="px-4 py-3 text-gray-400 truncate max-w-[200px]">
+                              {auditDetail(log.action, log.meta as Record<string, unknown> | null)}
+                            </td>
+                          </tr>
+                        </>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
+          })()}
         </section>
       </main>
     </>

@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 422 })
   }
 
-  const { type, fileName, mimeType } = parsed.data
+  const { type, mimeType } = parsed.data
   const ownerId = parsed.data.deviceId ?? parsed.data.caseId!
   const ownerPrefix = parsed.data.deviceId ? 'devices' : 'cases'
 

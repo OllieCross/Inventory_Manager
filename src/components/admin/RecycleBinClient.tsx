@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 type RecycledItem = {
   id: string
@@ -91,6 +92,7 @@ function RestoreButton({
 export default function RecycleBinClient(props: Props) {
   const router = useRouter()
   const [purging, setPurging] = useState(false)
+  const [confirmPurge, setConfirmPurge] = useState(false)
   const [error, setError] = useState('')
 
   async function handleRestore(entityType: string, id: string) {
@@ -104,6 +106,7 @@ export default function RecycleBinClient(props: Props) {
   }
 
   async function handlePurge() {
+    setConfirmPurge(false)
     setPurging(true)
     setError('')
     const res = await fetch('/api/admin/recycle-bin', { method: 'POST' })
@@ -124,8 +127,8 @@ export default function RecycleBinClient(props: Props) {
           <p className="text-sm text-muted mt-0.5">Items are permanently deleted after {EXPIRY_DAYS} days.</p>
         </div>
         <button
-          className="btn-ghost text-sm text-red-400 hover:text-red-300"
-          onClick={handlePurge}
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg text-sm transition-colors disabled:opacity-50"
+          onClick={() => setConfirmPurge(true)}
           disabled={purging}
         >
           {purging ? 'Purging...' : 'Purge Expired'}
@@ -134,9 +137,28 @@ export default function RecycleBinClient(props: Props) {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
+      {confirmPurge && (
+        <ConfirmModal
+          title="Purge expired items"
+          message={`This will permanently delete all expired items. This cannot be undone.`}
+          confirmLabel="Purge"
+          onConfirm={handlePurge}
+          onCancel={() => setConfirmPurge(false)}
+        />
+      )}
+
       {totalItems === 0 ? (
-        <div className="card flex items-center justify-center py-12 text-muted text-sm">
-          Recycle bin is empty.
+        <div className="card flex flex-col items-center justify-center py-12 gap-3 text-center">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-muted/50">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+          <div>
+            <p className="text-sm font-medium">Nothing here</p>
+            <p className="text-xs text-muted mt-0.5">Deleted items will appear for 30 days before expiring.</p>
+          </div>
         </div>
       ) : (
         <>

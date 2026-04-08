@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
+import { usePathname } from 'next/navigation'
 
 const SOCIAL_LINKS = [
   {
@@ -41,6 +42,9 @@ const SOCIAL_LINKS = [
 export default function Footer() {
   const { data: session } = useSession()
   const isAdmin = session?.user?.role === 'ADMIN'
+  const pathname = usePathname()
+
+  if (pathname === '/login') return null
 
   return (
     <footer className="border-t border-foreground/10 mt-auto pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] px-4">
