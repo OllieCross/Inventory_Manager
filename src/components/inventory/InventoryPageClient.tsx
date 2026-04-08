@@ -16,8 +16,7 @@ const STATUS_COLORS: Record<string, string> = {
 type CaseItem = { name: string }
 type Case = {
   id: string; name: string; items: CaseItem[]
-  _count: { items: number; images: number; documents: number }
-  createdBy: { name: string }
+  _count: { items: number; devices: number }
 }
 type Device = {
   id: string; name: string; status: string; qrCode: string
@@ -29,14 +28,24 @@ type Consumable = {
   warningThreshold: number | null; criticalThreshold: number | null; notes: string | null
 }
 type StandaloneItem = { id: string; name: string; quantity: number; comment: string | null }
+type Tank = {
+  id: string; name: string; chemicalCompound: string; unit: string
+  fullCapacity: number; currentCapacity: number; notes: string | null
+}
 
 type Props = {
   cases: Case[]
   devices: Device[]
   consumables: Consumable[]
   standaloneItems: StandaloneItem[]
+  tanks: Tank[]
   canEdit: boolean
   isAdmin: boolean
+}
+
+const COMPOUND_LABELS: Record<string, string> = {
+  H2O: 'H\u2082O', O2: 'O\u2082', CO2: 'CO\u2082',
+  C4H10C3H8: 'Butane/Propane', N2: 'N\u2082', H2: 'H\u2082', LN2: 'LN\u2082', Other: 'Other',
 }
 
 const FAB_ITEMS = [
@@ -44,9 +53,10 @@ const FAB_ITEMS = [
   { href: '/items/new', label: '+ Item' },
   { href: '/devices/new', label: '+ Device' },
   { href: '/consumables/new', label: '+ Consumable' },
+  { href: '/tanks/new', label: '+ Tank' },
 ]
 
-export default function InventoryPageClient({ cases, devices, consumables, standaloneItems, canEdit }: Props) {
+export default function InventoryPageClient({ cases, devices, consumables, standaloneItems, tanks, canEdit }: Props) {
   const [query, setQuery] = useState('')
   const [fabOpen, setFabOpen] = useState(false)
   const fabRef = useRef<HTMLDivElement>(null)
@@ -73,7 +83,9 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
   }, [cases, q])
 
   const filteredDevices = useMemo(() =>
-    q ? devices.filter((d) => d.name.toLowerCase().includes(q)) : devices,
+    q
+      ? devices.filter((d) => d.name.toLowerCase().includes(q))
+      : devices.filter((d) => d.case === null),
     [devices, q]
   )
   const filteredConsumables = useMemo(() =>
@@ -84,8 +96,12 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
     q ? standaloneItems.filter((i) => i.name.toLowerCase().includes(q)) : standaloneItems,
     [standaloneItems, q]
   )
+  const filteredTanks = useMemo(() =>
+    q ? tanks.filter((t) => t.name.toLowerCase().includes(q)) : tanks,
+    [tanks, q]
+  )
 
-  const totalResults = filteredCases.length + filteredDevices.length + filteredConsumables.length + filteredItems.length
+  const totalResults = filteredCases.length + filteredDevices.length + filteredConsumables.length + filteredItems.length + filteredTanks.length
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
@@ -94,7 +110,7 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
         <div className="flex items-center gap-2">
           <Link
             href="/issues"
-            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium px-3 py-1.5 rounded-lg text-sm transition-colors"
+            className="bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors"
           >
             Issues
           </Link>
@@ -132,11 +148,9 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
                   <p className="font-medium text-sm truncate">{c.name}</p>
                   <p className="text-muted text-xs mt-0.5">
                     {[
-                      c._count.items > 0 && `${c._count.items} items`,
-                      c._count.images > 0 && `${c._count.images} photos`,
-                      c._count.documents > 0 && `${c._count.documents} docs`,
-                      `by ${c.createdBy.name}`,
-                    ].filter(Boolean).join(' · ')}
+                      c._count.items > 0 && `${c._count.items} item${c._count.items !== 1 ? 's' : ''}`,
+                      c._count.devices > 0 && `${c._count.devices} device${c._count.devices !== 1 ? 's' : ''}`,
+                    ].filter(Boolean).join(' · ') || 'Empty'}
                   </p>
                   {c.matchedItems.length > 0 && (
                     <ul className="mt-1 space-y-0.5">
@@ -172,7 +186,7 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
                       <span className={STATUS_COLORS[d.status] ?? 'text-muted'}>{STATUS_LABELS[d.status] ?? d.status}</span>
                       <span className="text-muted"> &middot; {d._count.images} photos &middot; {d._count.documents} docs &middot; {d._count.logbook} log entries</span>
                     </p>
-                    {d.case && <p className="text-muted text-xs mt-0.5">In: {d.case.name}</p>}
+                    {q && d.case && <p className="text-muted text-xs mt-0.5">In: {d.case.name}</p>}
                   </div>
                   <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
                 </Link>
@@ -197,14 +211,22 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
               const isCritical = hasCritical && c.stockQuantity <= c.criticalThreshold!
               const isWarning = hasWarning && !isCritical && c.stockQuantity <= c.warningThreshold!
               const barColor = isCritical ? 'bg-red-500' : isWarning ? 'bg-yellow-400' : (hasWarning || hasCritical) ? 'bg-green-500' : 'bg-foreground/20'
-              // Fill is capped at a sensible max: warning threshold * 4, or stock * 2, min 1
-              const cap = Math.max(
-                c.warningThreshold != null ? c.warningThreshold * 4 : 0,
-                c.criticalThreshold != null ? c.criticalThreshold * 8 : 0,
-                c.stockQuantity * 1.5,
-                1
-              )
-              const fill = Math.min(c.stockQuantity / cap, 1)
+              let fill = 0
+              if (c.stockQuantity <= 0) {
+                fill = 0
+              } else if (hasWarning && c.warningThreshold! > 0) {
+                const wt = c.warningThreshold!
+                const ct = hasCritical ? c.criticalThreshold! : 0
+                if (c.stockQuantity >= wt * 2) fill = 1
+                else if (c.stockQuantity >= wt * 1.5) fill = 0.75
+                else if (c.stockQuantity >= wt) fill = 0.5
+                else if (hasCritical && c.stockQuantity >= ct) fill = 0.25
+                else fill = 0
+              } else if (hasCritical && c.criticalThreshold! > 0) {
+                fill = c.stockQuantity >= c.criticalThreshold! ? 0.25 : 0
+              } else {
+                fill = 0.5
+              }
               return (
                 <Link key={c.id} href={`/consumables/${c.id}/edit`} className="card flex items-center justify-between gap-4 hover:bg-foreground/5 transition-colors">
                   <div className="min-w-0 flex-1">
@@ -250,6 +272,42 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
                 <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
               </Link>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* Tanks */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-muted uppercase tracking-wider flex items-center gap-2">
+          Tanks <span className="bg-foreground/10 text-foreground/70 text-xs font-semibold rounded-full px-2 py-0.5 normal-case">{filteredTanks.length}</span>
+        </h2>
+        {filteredTanks.length === 0 ? (
+          <p className="text-muted text-sm">{q ? 'No tanks match.' : 'No tanks yet.'}</p>
+        ) : (
+          <div className="space-y-2">
+            {filteredTanks.map((tank) => {
+              const fillPct = tank.fullCapacity > 0
+                ? Math.min(100, Math.round((tank.currentCapacity / tank.fullCapacity) * 100))
+                : 0
+              const fillColor = fillPct >= 60 ? 'bg-green-500' : fillPct >= 30 ? 'bg-yellow-400' : 'bg-red-500'
+              return (
+                <Link key={tank.id} href={`/tanks/${tank.id}`} className="card flex items-center justify-between gap-4 hover:bg-foreground/5 transition-colors">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="font-medium text-sm truncate">{tank.name}</p>
+                      <span className="text-xs text-muted shrink-0">{COMPOUND_LABELS[tank.chemicalCompound] ?? tank.chemicalCompound}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <div className="flex-1 h-1.5 rounded-full bg-foreground/10 overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${fillColor}`} style={{ width: `${fillPct}%` }} />
+                      </div>
+                      <span className="text-sm font-semibold shrink-0">{tank.currentCapacity} <span className="font-normal text-muted">/ {tank.fullCapacity} {tank.unit}</span></span>
+                    </div>
+                  </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
+              )
+            })}
           </div>
         )}
       </section>

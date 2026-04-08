@@ -65,6 +65,7 @@ type PendingDocument = { file: File; title: string; type: DocumentRow['type'] }
 type Props = {
   mode: 'create' | 'edit'
   caseId?: string
+  isAdmin?: boolean
   initialData?: {
     name: string
     description: string
@@ -160,7 +161,7 @@ async function uploadDocumentFile(
 
 // ---------- Component ----------
 
-export default function CaseEditorForm({ mode, caseId, initialData, allCases = [] }: Props) {
+export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, allCases = [] }: Props) {
   const router = useRouter()
 
   const [activeCaseId] = useState(caseId)
@@ -190,6 +191,8 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
     | { kind: 'document'; id: string; name: string }
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
+  const [showDeleteCase, setShowDeleteCase] = useState(false)
+  const [deletingCase, setDeletingCase] = useState(false)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -321,6 +324,20 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
     setConfirmTarget(null)
   }
 
+  async function handleDeleteCase() {
+    setDeletingCase(true)
+    try {
+      const res = await fetch(`/api/cases/${activeCaseId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error('Failed to delete')
+      router.push('/editor')
+      router.refresh()
+    } catch {
+      setError('Failed to delete case')
+      setDeletingCase(false)
+      setShowDeleteCase(false)
+    }
+  }
+
   // ---------- Submit ----------
 
   async function handleSubmit(e: React.FormEvent) {
@@ -329,6 +346,13 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
     setError('')
 
     try {
+      const invalidItem = items.find((item) => !item.name.trim() || item.quantity < 1)
+      if (invalidItem) {
+        setError('All gear list items must have a name and a quantity of at least 1')
+        setSaving(false)
+        return
+      }
+
       if (mode === 'create') {
         const res = await fetch('/api/cases', {
           method: 'POST',
@@ -647,12 +671,32 @@ export default function CaseEditorForm({ mode, caseId, initialData, allCases = [
       {/* Error + submit */}
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      <div className="flex gap-3">
+      <div className="flex gap-3 flex-wrap">
         <button type="submit" disabled={saving} className="btn-primary">
           {saving ? 'Saving...' : mode === 'create' ? 'Create Case' : 'Save Changes'}
         </button>
         <button type="button" onClick={() => router.back()} className="btn-ghost">Cancel</button>
+        {mode === 'edit' && isAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowDeleteCase(true)}
+            className="ml-auto bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            Delete Case
+          </button>
+        )}
       </div>
+
+      {showDeleteCase && (
+        <ConfirmModal
+          title="Delete Case"
+          message={`Are you sure you want to delete "${initialData?.name}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          onConfirm={handleDeleteCase}
+          onCancel={() => setShowDeleteCase(false)}
+          loading={deletingCase}
+        />
+      )}
 
       {confirmTarget && (
         <ConfirmModal
@@ -691,6 +735,7 @@ type SortableItemRowProps = {
 
 function SortableItemRow({ id, item, index, mode, allCases, onUpdate, onMoveToCase, onRemove }: SortableItemRowProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const [qtyStr, setQtyStr] = useState(String(item.quantity))
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -714,18 +759,24 @@ function SortableItemRow({ id, item, index, mode, allCases, onUpdate, onMoveToCa
           <line x1="4" y1="17" x2="20" y2="17" />
         </svg>
       </button>
-      <div className="flex-1 grid grid-cols-2 gap-2 min-w-0">
-        <input type="text" required className="input-field col-span-2" placeholder="Item name" value={item.name} onChange={(e) => onUpdate(index, 'name', e.target.value)} />
-        <input type="number" min={1} className="input-field" placeholder="Qty" value={item.quantity} onChange={(e) => onUpdate(index, 'quantity', parseInt(e.target.value) || 1)} />
-        <input type="text" className="input-field" placeholder="Comment (optional)" value={item.comment} onChange={(e) => onUpdate(index, 'comment', e.target.value)} />
-      </div>
-      <div className="flex flex-col gap-1 pt-1">
+      <div className="flex-1 grid grid-cols-10 gap-2 min-w-0">
+        <input type="text" required className="input-field col-span-10" placeholder="Item name" value={item.name} onChange={(e) => onUpdate(index, 'name', e.target.value)} />
+        <input type="number" min={1} className="input-field col-span-2" placeholder="Qty" value={qtyStr}
+          onChange={(e) => {
+            setQtyStr(e.target.value)
+            const parsed = parseInt(e.target.value)
+            if (!isNaN(parsed) && parsed >= 1) onUpdate(index, 'quantity', parsed)
+          }}
+        />
+        <input type="text" className="input-field col-span-8" placeholder="Comment (optional)" value={item.comment} onChange={(e) => onUpdate(index, 'comment', e.target.value)} />
         {mode === 'edit' && item.id && allCases.length > 0 && (
-          <select onChange={(e) => { if (e.target.value) onMoveToCase(item.id!, e.target.value) }} className="text-xs bg-surface border border-foreground/10 rounded text-muted" defaultValue="" title="Move to another case">
-            <option value="">Move...</option>
+          <select onChange={(e) => { if (e.target.value) onMoveToCase(item.id!, e.target.value) }} className="col-span-10 text-xs bg-surface border border-foreground/10 rounded text-muted px-1 py-1" defaultValue="" title="Move to another case">
+            <option value="">Move to another case...</option>
             {allCases.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         )}
+      </div>
+      <div className="flex items-center pt-1">
         <button type="button" onClick={onRemove} className="text-red-400/60 hover:text-red-400 text-xs transition-colors" aria-label="Remove item">Remove</button>
       </div>
     </div>

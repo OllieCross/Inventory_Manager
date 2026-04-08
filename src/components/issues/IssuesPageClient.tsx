@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 type FaultyDevice = {
   id: string; name: string; status: string; statusLabel: string
@@ -24,27 +25,36 @@ type Props = {
   allItems: EntityOption[]
 }
 
-export default function IssuesPageClient({ faultyDevices, manualIssues, allDevices, allCases, allItems }: Props) {
+type EntityType = 'device' | 'case' | 'item' | 'other'
+
+export default function IssuesPageClient({ faultyDevices, manualIssues: initialIssues, allDevices, allCases, allItems }: Props) {
   const router = useRouter()
+  const [issues, setIssues] = useState<ManualIssue[]>(initialIssues)
   const [showForm, setShowForm] = useState(false)
-  const [entityType, setEntityType] = useState<'device' | 'case' | 'item'>('device')
+  const [entityType, setEntityType] = useState<EntityType>('device')
   const [entityId, setEntityId] = useState('')
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
-  const entityOptions = entityType === 'device' ? allDevices : entityType === 'case' ? allCases : allItems
+  const entityOptions =
+    entityType === 'device' ? allDevices :
+    entityType === 'case' ? allCases :
+    entityType === 'item' ? allItems : []
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!entityId) { setError('Please select an entity'); return }
+    if (entityType !== 'other' && !entityId) { setError('Please select an entity'); return }
     setError('')
     setSubmitting(true)
     try {
-      const body: Record<string, string> = { description }
+      const body: Record<string, string | boolean> = { description }
       if (entityType === 'device') body.deviceId = entityId
       else if (entityType === 'case') body.caseId = entityId
-      else body.itemId = entityId
+      else if (entityType === 'item') body.itemId = entityId
+      else body.isOther = true
 
       const res = await fetch('/api/issues', {
         method: 'POST',
@@ -56,12 +66,30 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
         setError(typeof data.error === 'string' ? data.error : 'Failed to report issue')
         return
       }
+      const created = await res.json()
+      const cd = new Date(created.createdAt)
+      const createdAtFmt = `${cd.getDate().toString().padStart(2,'0')}/${(cd.getMonth()+1).toString().padStart(2,'0')}/${cd.getFullYear()}`
+      setIssues((prev) => [{ id: created.id, description: created.description, createdAt: createdAtFmt, userName: created.user.name, device: created.device, case: created.case, item: created.item }, ...prev])
       setShowForm(false)
       setDescription('')
       setEntityId('')
+      setEntityType('device')
       router.refresh()
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/issues/${deleteTarget}`, { method: 'DELETE' })
+      if (!res.ok) { setError('Failed to delete issue'); return }
+      setIssues((prev) => prev.filter((i) => i.id !== deleteTarget))
+    } finally {
+      setDeleting(false)
+      setDeleteTarget(null)
     }
   }
 
@@ -85,24 +113,27 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
             <select
               className="input-field"
               value={entityType}
-              onChange={e => { setEntityType(e.target.value as typeof entityType); setEntityId('') }}
+              onChange={e => { setEntityType(e.target.value as EntityType); setEntityId('') }}
             >
               <option value="device">A device</option>
               <option value="case">A case</option>
               <option value="item">A stored item</option>
+              <option value="other">Other</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {entityType.charAt(0).toUpperCase() + entityType.slice(1)}
-            </label>
-            <select className="input-field" value={entityId} onChange={e => setEntityId(e.target.value)} required>
-              <option value="">Select...</option>
-              {entityOptions.map(o => (
-                <option key={o.id} value={o.id}>{o.name}</option>
-              ))}
-            </select>
-          </div>
+          {entityType !== 'other' && (
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                {entityType === 'device' ? 'Device' : entityType === 'case' ? 'Case' : 'Item'}
+              </label>
+              <select className="input-field" value={entityId} onChange={e => setEntityId(e.target.value)} required>
+                <option value="">Select...</option>
+                {entityOptions.map(o => (
+                  <option key={o.id} value={o.id}>{o.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
             <textarea
@@ -127,7 +158,7 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
           Faulty / In Repair Devices ({faultyDevices.length})
         </h2>
         {faultyDevices.length === 0 ? (
-          <p className="text-muted text-sm">No issues reported.</p>
+          <p className="text-muted text-sm">No faulty or in-repair devices.</p>
         ) : (
           <div className="space-y-3">
             {faultyDevices.map(d => (
@@ -160,22 +191,24 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
       {/* Manual Issues */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">
-          Reported Issues ({manualIssues.length})
+          Reported Issues ({issues.length})
         </h2>
-        {manualIssues.length === 0 ? (
+        {issues.length === 0 ? (
           <p className="text-muted text-sm card py-4 text-center">No manual issues reported. Use + Report Issue to log a problem.</p>
         ) : (
           <div className="space-y-2">
-            {manualIssues.map(i => {
+            {issues.map(i => {
               const entity = i.device ?? i.case ?? i.item
-              const entityHref = i.device ? `/devices/${i.device.id}` : i.case ? `/case/${i.case.id}` : null
               return (
                 <div key={i.id} className="card space-y-1">
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm">{i.description}</p>
-                    {entityHref && (
-                      <Link href={entityHref} className="text-xs text-brand hover:underline shrink-0">View</Link>
-                    )}
+                    <button
+                      onClick={() => setDeleteTarget(i.id)}
+                      className="text-red-400/60 hover:text-red-400 text-xs transition-colors shrink-0"
+                    >
+                      Delete
+                    </button>
                   </div>
                   <p className="text-xs text-muted">
                     {entity?.name && <span>{entity.name} &middot; </span>}
@@ -187,6 +220,17 @@ export default function IssuesPageClient({ faultyDevices, manualIssues, allDevic
           </div>
         )}
       </section>
+
+      {deleteTarget && (
+        <ConfirmModal
+          title="Delete Issue"
+          message="Delete this reported issue? This cannot be undone."
+          confirmLabel="Delete"
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+          loading={deleting}
+        />
+      )}
     </main>
   )
 }

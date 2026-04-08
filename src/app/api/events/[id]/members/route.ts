@@ -5,7 +5,7 @@ import { z } from 'zod'
 
 const schema = z.object({
   action: z.enum(['add', 'remove']),
-  type: z.enum(['stagehand', 'case', 'device', 'item', 'consumable']),
+  type: z.enum(['stagehand', 'case', 'device', 'item', 'consumable', 'tank']),
   memberId: z.string().min(1),
   quantityNeeded: z.number().positive().optional(),
 })
@@ -57,6 +57,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         create: { eventId, consumableId: memberId, quantityNeeded: quantityNeeded ?? 1 },
         update: { quantityNeeded: quantityNeeded ?? 1 },
       })
+    } else if (type === 'tank') {
+      await prisma.eventTank.upsert({
+        where: { eventId_tankId: { eventId, tankId: memberId } },
+        create: { eventId, tankId: memberId, quantityNeeded: quantityNeeded },
+        update: { quantityNeeded: quantityNeeded },
+      })
     }
   } else {
     if (type === 'stagehand') {
@@ -69,6 +75,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       await prisma.eventItem.deleteMany({ where: { eventId, itemId: memberId } })
     } else if (type === 'consumable') {
       await prisma.eventConsumable.deleteMany({ where: { eventId, consumableId: memberId } })
+    } else if (type === 'tank') {
+      await prisma.eventTank.deleteMany({ where: { eventId, tankId: memberId } })
     }
   }
 

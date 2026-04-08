@@ -19,6 +19,7 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
       where: { id },
       include: {
         items: { orderBy: { sortOrder: 'asc' } },
+        devices: { where: { deletedAt: null }, orderBy: { name: 'asc' } },
         images: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
         documents: { where: { deletedAt: null }, orderBy: { createdAt: "asc" } },
         createdBy: { select: { name: true } },
@@ -58,8 +59,17 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
     }))
   )
 
+  const STATUS_LABELS: Record<string, string> = {
+    Working: 'Working', Faulty: 'Faulty', InRepair: 'In Repair',
+    Retired: 'Retired', Lost: 'Lost', RentedToFriend: 'Rented to a Friend',
+  }
+  const STATUS_COLORS: Record<string, string> = {
+    Working: 'text-green-400', Faulty: 'text-red-400', InRepair: 'text-yellow-400',
+    Retired: 'text-muted', Lost: 'text-red-600', RentedToFriend: 'text-blue-400',
+  }
+
   const hasContent =
-    caseData.items.length > 0 || imageUrls.length > 0 || documentUrls.length > 0
+    caseData.items.length > 0 || caseData.devices.length > 0 || imageUrls.length > 0 || documentUrls.length > 0
 
   return (
     <>
@@ -111,6 +121,35 @@ export default async function CasePage({ params }: { params: Promise<{ id: strin
                   </div>
                   <span className="text-muted text-sm ml-4 shrink-0">x{item.quantity}</span>
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Devices */}
+        {caseData.devices.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold mb-3">
+              Devices
+              <span className="ml-2 text-muted text-sm font-normal">
+                {caseData.devices.length}
+              </span>
+            </h2>
+            <div className="card divide-y divide-foreground/10">
+              {caseData.devices.map((device) => (
+                <Link
+                  key={device.id}
+                  href={`/devices/${device.id}`}
+                  className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0 hover:bg-foreground/5 transition-colors -mx-4 px-4"
+                >
+                  <div>
+                    <p className="font-medium text-sm">{device.name}</p>
+                    <p className={`text-xs mt-0.5 ${STATUS_COLORS[device.status] ?? 'text-muted'}`}>
+                      {STATUS_LABELS[device.status] ?? device.status}
+                    </p>
+                  </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
               ))}
             </div>
           </section>

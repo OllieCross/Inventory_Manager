@@ -1,6 +1,85 @@
 # Changelog
 
-All notable changes to SFXProOne CaseManager are documented here.
+All notable changes to SFX Pro One Inventory Manager are documented here.
+
+---
+
+## v1.3.4 - 2026-04-08
+
+### Added
+
+- **Tanks entity**: new inventory entity for SFX gas tanks (CO2, O2, N2, LN2, H2, butane/propane, water, other); tracks chemical compound, unit, full capacity, current capacity, notes, photos, documents, and a maintenance logbook
+- **Tank pages**: Tank List (in Inventory tab), Tank Detail (with capacity bar), Tank Create, Tank Edit (with delete option and inline logbook management)
+- **Tank API routes**: full CRUD at `/api/tanks`, image/document upload via MinIO presigned URLs, logbook entry create/delete
+- **Events - Tank support**: tanks can be added to event inventory from the Create Event / Edit Event form; tanks appear in the Event Detail view
+- **Inventory tab - Tanks section**: tanks shown below Items with a capacity fill bar (green >= 60%, yellow >= 30%, red below 30%) and compound label; FAB menu includes "+ Tank"
+
+---
+
+## v1.3.3 - 2026-04-08
+
+### Changed
+
+- **Global date format**: all dates across the app now render as DD/MM/YYYY (e.g. 31/12/2026) instead of "31 Dec 2026"; datetime fields show "DD/MM/YYYY at HH:MM"; affects case/device/event detail pages, admin panel, audit log, logbook entries, issues, recycle bin
+- **Profile page - section headings**: "DISPLAY NAME" and "CHANGE PASSWORD" headings now render as "Display Name" and "Change Password" (removed the `uppercase` CSS class)
+
+---
+
+## v1.3.2 - 2026-04-08
+
+### Added
+
+- **Issues - Other category**: added a 4th option "Other" to the manual issue report form; when selected, the entity selector is hidden and the user can describe the issue freely without linking it to a specific device, case, or item
+- **Issues - delete manual entries**: each reported issue entry now has a Delete button with a confirmation modal; issues are removed immediately from the list on success
+
+### Changed
+
+- **Issues - removed "View" button on manual reported issues**: the View redirect link has been removed from manual issue cards; the entity name still appears in the metadata line for context
+
+---
+
+## v1.3.1 - 2026-04-08
+
+### Changed
+
+- **Events - Groups button**: aligned to the right side of the header row on the Events list page
+- **Event Details - crew layout**: crew members now display as inline pills (multiple per row) instead of one per line
+- **Event Edit - start date/time**: split into two labeled columns with individual labels ("Start Date" and "Start Time") so fields no longer overlap and match the height of other fields
+- **Event Edit - calendar Done button**: added extra bottom padding to the Details card so the iOS native date picker calendar does not clip the Done button
+- **Event Edit - item quantity prompt**: when adding an item to the event inventory, a quantity input is now shown (same as for consumables)
+- **Events - today highlight**: replaced the white-only box-shadow highlight with a green `ring-2 ring-green-500` border and green outer glow, visible in both light and dark mode
+
+---
+
+## v1.3.0 - 2026-04-08
+
+### Changed
+
+- **Global page width**: all pages now use consistent `max-w-3xl` content width with small side padding; Profile page was `max-w-lg` and Admin Panel was `max-w-4xl` - both corrected
+- **Inventory - Issues button**: matched size (`px-4 py-2`) to the QR Generator button
+- **Inventory - case card metadata**: removed photo count, document count, and "by Admin" from case list cards; now shows only item count and device count
+- **Device Edit - Purchase Date field**: moved out of the 2-column grid alongside Serial Number; now renders full width like all other fields
+- **Admin Panel - layout**: added bottom margin after Create User button; both user table and audit log table now have `min-w-[480px]` and scroll horizontally within their containers instead of overflowing the page
+- **Admin Panel - Recycle Bin button**: "Purge Expired" renamed to "Empty Recycle Bin"
+- **Changelog page**: applied `overflow-wrap: break-word` and `overflow-x: hidden` to prevent text overflowing past the header width
+- **Footer**: removed the Admin shortcut link
+- **Header logo**: added 1px border around the logo image - white/60 opacity in dark mode, black/30 opacity in light mode
+
+---
+
+## v1.2.9 - 2026-04-08
+
+### Fixed
+
+- **Device visibility in Case Details**: devices assigned to a case now appear in the Case Details view under a new "Devices" section with links to each device detail page
+- **Inventory - devices in cases hidden**: devices assigned to a case are no longer shown in the main Inventory tab device list; they still appear when searching inventory (with "In: Case Name" label visible during search only)
+- **Consumable stock bar logic**: rewrote fill percentage logic - 100% at 2x warning threshold or more, 75% at 1.5x warning, 50% at warning threshold, 25% at critical threshold, 0% when empty
+- **Input last-digit deletion (consumable stock quantity)**: stock quantity field now allows clearing to empty during editing; validates on save (must be >= 0)
+- **Input last-digit deletion (standalone item quantity)**: quantity field now allows clearing during editing; validates on save (must be >= 1)
+- **Input last-digit deletion (gear list item quantity)**: case gear list quantity fields now allow clearing during editing; validates all items on case save
+- **Delete Case button**: Edit Case page now shows a Delete Case button (admin only) with confirmation modal
+- **Delete Device button**: Edit Device page now shows a Delete Device button (any editor) with confirmation modal
+- **Logbook entry inline popup**: clicking "+ Add logbook entry" on the Device Details page now opens an inline form directly on the page instead of redirecting to the Edit Device page
 
 ---
 

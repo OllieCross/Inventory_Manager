@@ -310,6 +310,14 @@ html.light .login-orb-3 { background: rgb(6 182 212 / 0.09); }
 
 .prose-changelog li {
   @apply text-sm text-foreground/80;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.prose-changelog {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow-x: hidden;
 }
 
 .prose-changelog code {

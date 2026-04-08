@@ -93,7 +93,7 @@ export default async function AdminPage() {
   return (
     <>
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-6 space-y-10">
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-10">
         <section>
           <div className="flex items-center justify-between gap-3 mb-6">
             <div>
@@ -103,10 +103,12 @@ export default async function AdminPage() {
             <Link href="/admin/recycle-bin" className="btn-ghost text-sm">Recycle Bin</Link>
           </div>
 
-          <CreateUserButton />
+          <div className="mb-4">
+            <CreateUserButton />
+          </div>
 
           <div className="card overflow-hidden p-0 overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[480px]">
               <thead>
                 <tr className="border-b border-foreground/10 text-left text-gray-400">
                   <th className="px-4 py-3 font-medium">Name</th>
@@ -159,12 +161,14 @@ export default async function AdminPage() {
               const day = new Date(d); day.setHours(0,0,0,0)
               if (day.getTime() === today.getTime()) return 'Today'
               if (day.getTime() === yesterday.getTime()) return 'Yesterday'
-              return day.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+              const dd = day.getDate().toString().padStart(2, '0')
+              const mm = (day.getMonth() + 1).toString().padStart(2, '0')
+              return `${dd}/${mm}/${day.getFullYear()}`
             }
             let lastLabel = ''
             return (
               <div className="card overflow-hidden p-0 overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr className="border-b border-foreground/10 text-left text-gray-400">
                       <th className="px-4 py-3 font-medium">When</th>

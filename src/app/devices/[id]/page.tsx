@@ -7,6 +7,7 @@ import Header from '@/components/layout/Header'
 import CaseGallery from '@/components/media/CaseGallery'
 import PDFViewer from '@/components/media/PDFViewer'
 import Link from 'next/link'
+import LogbookAdder from '@/components/devices/LogbookAdder'
 
 const STATUS_LABELS: Record<string, string> = {
   Working: 'Working',
@@ -177,26 +178,31 @@ export default async function DevicePage({ params }: { params: Promise<{ id: str
           <h2 className="text-lg font-semibold mb-3">
             Logbook <span className="ml-2 text-muted text-sm font-normal">{device.logbook.length} entries</span>
           </h2>
-          {device.logbook.length === 0 ? (
-            <p className="text-muted text-sm">No logbook entries yet.</p>
+          {canEdit ? (
+            <LogbookAdder
+              deviceId={id}
+              initialEntries={device.logbook.map((e) => ({
+                id: e.id,
+                date: e.date.toISOString(),
+                comment: e.comment,
+                user: e.user,
+              }))}
+            />
           ) : (
-            <div className="card divide-y divide-foreground/10">
-              {device.logbook.map((entry) => (
-                <div key={entry.id} className="py-3 first:pt-0 last:pb-0">
-                  <p className="text-sm">{entry.comment}</p>
-                  <p className="text-muted text-xs mt-0.5">
-                    {formatDate(entry.date)} &middot; {entry.user.name}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-          {canEdit && (
-            <div className="mt-3">
-              <Link href={`/devices/${id}/edit`} className="btn-secondary w-full text-sm text-center block">
-                + Add logbook entry
-              </Link>
-            </div>
+            device.logbook.length === 0 ? (
+              <p className="text-muted text-sm">No logbook entries yet.</p>
+            ) : (
+              <div className="card divide-y divide-foreground/10">
+                {device.logbook.map((entry) => (
+                  <div key={entry.id} className="py-3 first:pt-0 last:pb-0">
+                    <p className="text-sm">{entry.comment}</p>
+                    <p className="text-muted text-xs mt-0.5">
+                      {formatDate(entry.date)} &middot; {entry.user.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </section>
 

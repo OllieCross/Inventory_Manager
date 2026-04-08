@@ -131,7 +131,7 @@ export default function RecycleBinClient(props: Props) {
           onClick={() => setConfirmPurge(true)}
           disabled={purging}
         >
-          {purging ? 'Purging...' : 'Purge Expired'}
+          {purging ? 'Emptying...' : 'Empty Recycle Bin'}
         </button>
       </div>
 

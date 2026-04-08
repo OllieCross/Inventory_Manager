@@ -48,19 +48,33 @@ enum InvoiceStatus {
   NotPaidInFull
 }
 
+enum ChemicalCompound {
+  H2O
+  O2
+  CO2
+  C4H10C3H8
+  N2
+  H2
+  LN2
+  Other
+}
+
 model User {
-  id              String           @id @default(cuid())
-  name            String
-  email           String           @unique
-  password        String?
-  createdAt       DateTime         @default(now())
-  role            Role             @default(VIEWER)
-  casesCreated    Case[]           @relation("CreatedBy")
-  casesUpdated    Case[]           @relation("UpdatedBy")
-  auditLogs       AuditLog[]
-  logbookEntries  LogbookEntry[]
-  eventStagehands EventStagehand[]
-  issueEntries    IssueEntry[]
+  id                   String                @id @default(cuid())
+  name                 String
+  email                String                @unique
+  password             String?
+  createdAt            DateTime              @default(now())
+  role                 Role                  @default(VIEWER)
+  casesCreated         Case[]                @relation("CreatedBy")
+  casesUpdated         Case[]                @relation("UpdatedBy")
+  auditLogs            AuditLog[]
+  logbookEntries       LogbookEntry[]
+  eventStagehands      EventStagehand[]
+  issueEntries         IssueEntry[]
+  tanksCreated         Tank[]                @relation("TankCreatedBy")
+  tanksUpdated         Tank[]                @relation("TankUpdatedBy")
+  tankLogbookEntries   TankLogbookEntry[]
 }
 
 model AuditLog {
@@ -280,6 +294,7 @@ model Event {
   devices       EventDevice[]
   items         EventItem[]
   consumables   EventConsumable[]
+  tanks         EventTank[]
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
@@ -329,6 +344,75 @@ model EventConsumable {
   quantityUsed   Float?
 
   @@id([eventId, consumableId])
+}
+
+model Tank {
+  id               String             @id @default(cuid())
+  name             String
+  qrCode           String?            @unique
+  chemicalCompound ChemicalCompound   @default(Other)
+  unit             String
+  fullCapacity     Float
+  currentCapacity  Float
+  notes            String?
+  images           TankImage[]
+  documents        TankDocument[]
+  logbook          TankLogbookEntry[]
+  eventTanks       EventTank[]
+  createdById      String
+  createdBy        User               @relation("TankCreatedBy", fields: [createdById], references: [id])
+  updatedById      String?
+  updatedBy        User?              @relation("TankUpdatedBy", fields: [updatedById], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+}
+
+model TankImage {
+  id        String    @id @default(cuid())
+  tankId    String
+  tank      Tank      @relation(fields: [tankId], references: [id], onDelete: Cascade)
+  fileKey   String    @unique
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+}
+
+model TankDocument {
+  id        String    @id @default(cuid())
+  tankId    String
+  tank      Tank      @relation(fields: [tankId], references: [id], onDelete: Cascade)
+  title     String
+  type      DocType
+  fileKey   String    @unique
+  fileName  String
+  fileSize  Int
+  mimeType  String
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+}
+
+model TankLogbookEntry {
+  id        String   @id @default(cuid())
+  tankId    String
+  tank      Tank     @relation(fields: [tankId], references: [id], onDelete: Cascade)
+  date      DateTime
+  comment   String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model EventTank {
+  eventId         String
+  event           Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  tankId          String
+  tank            Tank   @relation(fields: [tankId], references: [id], onDelete: Cascade)
+  quantityNeeded  Float?
+
+  @@id([eventId, tankId])
 }
 
 model IssueEntry {

@@ -41,9 +41,9 @@ export default async function EventsPage() {
         <h1 className="text-xl font-bold">Events</h1>
 
         {canEdit && (
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center justify-between gap-2">
             <Link href="/events/new" className="btn-primary text-sm">+ Event</Link>
-            <Link href="/groups" className="btn-primary text-sm">Groups</Link>
+            <Link href="/groups" className="btn-ghost text-sm">Groups</Link>
           </div>
         )}
 

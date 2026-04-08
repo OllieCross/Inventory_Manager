@@ -24,6 +24,10 @@ export type AuditAction =
   | 'EVENT_CREATED'
   | 'EVENT_UPDATED'
   | 'EVENT_COMPLETED'
+  | 'TANK_CREATED'
+  | 'TANK_UPDATED'
+  | 'TANK_DELETED'
+  | 'TANK_LOGBOOK_ENTRY_ADDED'
 
 export async function logAudit(
   action: AuditAction,

@@ -41,7 +41,11 @@ type Props = {
 
 function formatStartDateTime(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const day = d.getDate().toString().padStart(2, '0')
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  const year = d.getFullYear()
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return `${day}/${month}/${year} at ${time}`
 }
 
 type FilterOption = 'all' | 'upcoming' | 'completed'
@@ -111,9 +115,10 @@ export default function EventsPageClient({ events, canEdit, userId, todayISO, to
         return (
           <div
             key={event.id}
-            className="card relative space-y-2"
+            className={`card relative space-y-2 ${highlighted ? 'ring-2 ring-green-500' : ''}`}
             style={highlighted ? {
-              boxShadow: '0 0 0 1px rgba(255,255,255,0.85), 0 0 6px 1px rgba(255,255,255,0.3)',
+              boxShadow: '0 0 14px 3px rgba(22,163,74,0.25)',
+              transform: 'translateY(-1px)',
             } : undefined}
           >
             {/* Full-card tap target */}

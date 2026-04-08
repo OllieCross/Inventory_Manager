@@ -60,7 +60,7 @@ export default function Header() {
             alt="Inventory Manager"
             width={28}
             height={28}
-            className="rounded-md"
+            className={`rounded-md border ${theme === 'dark' ? 'border-white/60' : 'border-black/30'}`}
           />
           <span className="font-bold text-sm hidden sm:block">Inventory Manager</span>
         </Link>

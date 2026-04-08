@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import { useSession } from 'next-auth/react'
 import { usePathname } from 'next/navigation'
 
 const SOCIAL_LINKS = [
@@ -40,8 +39,6 @@ const SOCIAL_LINKS = [
 ]
 
 export default function Footer() {
-  const { data: session } = useSession()
-  const isAdmin = session?.user?.role === 'ADMIN'
   const pathname = usePathname()
 
   if (pathname === '/login') return null
@@ -69,11 +66,6 @@ export default function Footer() {
         </div>
 
         <div className="flex items-center gap-3">
-          {isAdmin && (
-            <Link href="/admin" className="hover:text-foreground transition-colors">
-              Admin
-            </Link>
-          )}
           <Link href="/changelog" className="hover:text-foreground transition-colors">
             Release notes
           </Link>

@@ -8,8 +8,9 @@ const createSchema = z.object({
   deviceId: z.string().optional().nullable(),
   caseId: z.string().optional().nullable(),
   itemId: z.string().optional().nullable(),
-}).refine(d => d.deviceId || d.caseId || d.itemId, {
-  message: 'At least one of deviceId, caseId, or itemId must be provided',
+  isOther: z.boolean().optional(),
+}).refine(d => d.isOther || d.deviceId || d.caseId || d.itemId, {
+  message: 'At least one of deviceId, caseId, or itemId must be provided, or select Other',
 })
 
 export async function GET() {

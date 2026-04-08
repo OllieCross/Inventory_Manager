@@ -20,13 +20,22 @@ const INVOICE_COLORS: Record<string, string> = {
   Paid: 'text-green-400', NotPaid: 'text-amber-500', DepositPaid: 'text-yellow-400',
   DepositNotYetPaid: 'text-yellow-400', NotPaidInFull: 'text-orange-400',
 }
+const COMPOUND_LABELS: Record<string, string> = {
+  H2O: 'H\u2082O', O2: 'O\u2082', CO2: 'CO\u2082',
+  C4H10C3H8: 'Butane/Propane', N2: 'N\u2082', H2: 'H\u2082', LN2: 'LN\u2082', Other: 'Other',
+}
+
 const DEVICE_STATUS_LABELS: Record<string, string> = {
   Working: 'Working', Faulty: 'Faulty', InRepair: 'In Repair',
   Retired: 'Retired', Lost: 'Lost', RentedToFriend: 'Rented to Friend',
 }
 
 function formatDateTime(d: Date) {
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const day = d.getDate().toString().padStart(2, '0')
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  const year = d.getFullYear()
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })
+  return `${day}/${month}/${year} at ${time}`
 }
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -52,6 +61,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       devices: { include: { device: { select: { id: true, name: true, status: true } } } },
       items: { include: { item: { select: { id: true, name: true, quantity: true, comment: true } } } },
       consumables: { include: { consumable: { select: { id: true, name: true, unit: true } } } },
+      tanks: { include: { tank: { select: { id: true, name: true, unit: true, chemicalCompound: true } } } },
     },
   })
 
@@ -105,11 +115,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         {event.stagehands.length > 0 && (
           <section className="space-y-2">
             <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Crew ({event.stagehands.length})</h2>
-            <div className="space-y-1">
+            <div className="flex flex-wrap gap-2">
               {event.stagehands.map(({ user }) => (
-                <div key={user.id} className="card py-2 px-3">
-                  <p className="text-sm font-medium">{user.name}</p>
-                </div>
+                <span key={user.id} className="bg-foreground/10 text-foreground/80 text-sm font-medium px-3 py-1.5 rounded-full">
+                  {user.name}
+                </span>
               ))}
             </div>
           </section>
@@ -176,6 +186,24 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                     {quantityUsed != null && <span>Used: {quantityUsed} {consumable.unit}</span>}
                   </div>
                 </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Tanks */}
+        {event.tanks.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Tanks ({event.tanks.length})</h2>
+            <div className="space-y-1">
+              {event.tanks.map(({ tank }) => (
+                <Link key={tank.id} href={`/tanks/${tank.id}`} className="card flex items-center justify-between gap-3 py-2 px-3 hover:bg-foreground/5 transition-colors">
+                  <div>
+                    <p className="text-sm">{tank.name}</p>
+                    <p className="text-xs text-muted">{COMPOUND_LABELS[tank.chemicalCompound] ?? tank.chemicalCompound} &middot; {tank.unit}</p>
+                  </div>
+                  <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
+                </Link>
               ))}
             </div>
           </section>

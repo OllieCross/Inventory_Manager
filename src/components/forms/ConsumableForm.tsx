@@ -22,7 +22,7 @@ export default function ConsumableForm({ mode, consumableId, initialData }: Prop
 
   const [name, setName] = useState(initialData?.name ?? '')
   const [unit, setUnit] = useState(initialData?.unit ?? '')
-  const [stockQuantity, setStockQuantity] = useState(initialData?.stockQuantity ?? 0)
+  const [stockQuantity, setStockQuantity] = useState(String(initialData?.stockQuantity ?? 0))
   const [warningThreshold, setWarningThreshold] = useState<string>(
     initialData?.warningThreshold != null ? String(initialData.warningThreshold) : ''
   )
@@ -41,10 +41,17 @@ export default function ConsumableForm({ mode, consumableId, initialData }: Prop
     setError('')
 
     try {
-      const body = {
+      const parsedStock = parseFloat(stockQuantity)
+    if (stockQuantity.trim() === '' || isNaN(parsedStock) || parsedStock < 0) {
+      setError('Stock quantity must be a valid number (0 or more)')
+      setSaving(false)
+      return
+    }
+
+    const body = {
         name,
         unit,
-        stockQuantity,
+        stockQuantity: parsedStock,
         warningThreshold: warningThreshold !== '' ? parseFloat(warningThreshold) : null,
         criticalThreshold: criticalThreshold !== '' ? parseFloat(criticalThreshold) : null,
         notes: notes || undefined,
@@ -135,7 +142,7 @@ export default function ConsumableForm({ mode, consumableId, initialData }: Prop
               step="0.01"
               className="input-field"
               value={stockQuantity}
-              onChange={(e) => setStockQuantity(parseFloat(e.target.value) || 0)}
+              onChange={(e) => setStockQuantity(e.target.value)}
             />
           </div>
         </div>

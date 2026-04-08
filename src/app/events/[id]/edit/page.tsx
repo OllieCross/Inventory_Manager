@@ -11,7 +11,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
 
   const { id } = await params
 
-  const [event, allUsers, allCases, allDevices, allItems, allConsumables, allGroups] = await Promise.all([
+  const [event, allUsers, allCases, allDevices, allItems, allConsumables, allTanks, allGroups] = await Promise.all([
     prisma.event.findUnique({
       where: { id },
       include: {
@@ -20,6 +20,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
         devices: { include: { device: { select: { id: true, name: true, status: true } } } },
         items: { include: { item: { select: { id: true, name: true, quantity: true } } } },
         consumables: { include: { consumable: { select: { id: true, name: true, unit: true } } } },
+        tanks: { include: { tank: { select: { id: true, name: true, unit: true, chemicalCompound: true } } } },
       },
     }),
     prisma.user.findMany({ orderBy: { name: 'asc' }, select: { id: true, name: true, email: true } }),
@@ -27,6 +28,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
     prisma.device.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true, status: true } }),
     prisma.item.findMany({ where: { caseId: null, deletedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true, quantity: true } }),
     prisma.consumable.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true, unit: true } }),
+    prisma.tank.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' }, select: { id: true, name: true, unit: true, chemicalCompound: true } }),
     prisma.group.findMany({
       orderBy: { name: 'asc' },
       include: {
@@ -57,6 +59,13 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
       unit: ec.consumable.unit,
       quantityNeeded: ec.quantityNeeded,
     })),
+    ...event.tanks.map((et) => ({
+      type: 'tank' as const,
+      id: et.tank.id,
+      name: et.tank.name,
+      unit: et.tank.unit,
+      chemicalCompound: et.tank.chemicalCompound,
+    })),
   ]
 
   return (
@@ -85,6 +94,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           allDevices={allDevices}
           allItems={allItems}
           allConsumables={allConsumables}
+          allTanks={allTanks}
           allGroups={allGroups}
         />
       </main>

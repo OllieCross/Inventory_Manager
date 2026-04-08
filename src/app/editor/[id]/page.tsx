@@ -9,6 +9,7 @@ export default async function EditCasePage({ params }: { params: Promise<{ id: s
   const session = await auth()
   if (!session) redirect('/login')
   if (!['EDITOR', 'ADMIN'].includes(session.user.role)) redirect('/scan')
+  const isAdmin = session.user.role === 'ADMIN'
 
   const { id } = await params
 
@@ -77,6 +78,7 @@ export default async function EditCasePage({ params }: { params: Promise<{ id: s
         <CaseEditorForm
           mode="edit"
           caseId={id}
+          isAdmin={isAdmin}
           initialData={initialData}
           allCases={allCases.filter((c) => c.id !== id)}
         />

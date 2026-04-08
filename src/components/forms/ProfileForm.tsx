@@ -104,7 +104,7 @@ export default function ProfileForm({
       {/* Display Name */}
       <form onSubmit={handleSaveName} className="card space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Display Name</h2>
+          <h2 className="text-sm font-semibold text-muted">Display Name</h2>
           <InlineFeedback success={nameSuccess} error={nameError} />
         </div>
         <div>
@@ -126,7 +126,7 @@ export default function ProfileForm({
       {hasPassword && (
         <form onSubmit={handleSavePassword} className="card space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Change Password</h2>
+            <h2 className="text-sm font-semibold text-muted">Change Password</h2>
             <InlineFeedback success={pwSuccess} error={pwError} />
           </div>
           <div>

@@ -10,7 +10,7 @@ const QRScanner = dynamic(() => import('@/components/scanner/QRScanner'), { ssr:
 
 // ---------- Types ----------
 
-type DeviceStatus = 'Working' | 'Faulty' | 'InRepair' | 'Retired' | 'Lost' | 'RentedToFriend'
+type ChemicalCompound = 'H2O' | 'O2' | 'CO2' | 'C4H10C3H8' | 'N2' | 'H2' | 'LN2' | 'Other'
 type DocType = 'Manual' | 'Certificate' | 'Other' | 'Bill' | 'Order' | 'Invoice' | 'ServiceReport'
 
 type ImageRow = {
@@ -49,27 +49,37 @@ type PendingDocument = { file: File; title: string; type: DocType }
 
 type Props = {
   mode: 'create' | 'edit'
-  deviceId?: string
+  tankId?: string
   initialData?: {
     name: string
     qrCode: string
-    serialNumber: string
-    purchaseDate: string
-    status: DeviceStatus
-    caseId: string
+    chemicalCompound: ChemicalCompound
+    unit: string
+    fullCapacity: string
+    currentCapacity: string
     notes: string
     images: ImageRow[]
     documents: DocumentRow[]
     logbook: LogbookRow[]
   }
-  allCases?: { id: string; name: string }[]
+}
+
+const COMPOUND_LABELS: Record<ChemicalCompound, string> = {
+  H2O: 'H\u2082O (Water)',
+  O2: 'O\u2082 (Oxygen)',
+  CO2: 'CO\u2082 (Carbon Dioxide)',
+  C4H10C3H8: 'C\u2084H\u2081\u2080/C\u2083H\u2088 (Butane/Propane)',
+  N2: 'N\u2082 (Nitrogen)',
+  H2: 'H\u2082 (Hydrogen)',
+  LN2: 'LN\u2082 (Liquid Nitrogen)',
+  Other: 'Other',
 }
 
 // ---------- Upload helpers ----------
 
 async function uploadImageFile(
   file: File,
-  deviceId: string,
+  tankId: string,
   onProgress: (state: 'uploading' | 'done' | 'error', result?: ImageRow) => void
 ): Promise<void> {
   onProgress('uploading')
@@ -93,7 +103,7 @@ async function uploadImageFile(
     const urlRes = await fetch('/api/minio/presigned-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId, type: 'image', fileName: processed.name, mimeType: processed.type }),
+      body: JSON.stringify({ tankId, type: 'image', fileName: processed.name, mimeType: processed.type }),
     })
     if (!urlRes.ok) throw new Error('Failed to get upload URL')
     const { url, fileKey } = await urlRes.json()
@@ -101,7 +111,7 @@ async function uploadImageFile(
     const uploadRes = await fetch(url, { method: 'PUT', headers: { 'Content-Type': processed.type }, body: processed })
     if (!uploadRes.ok) throw new Error('Upload failed')
 
-    const recordRes = await fetch(`/api/devices/${deviceId}/images`, {
+    const recordRes = await fetch(`/api/tanks/${tankId}/images`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fileKey, fileName: processed.name, fileSize: processed.size, mimeType: processed.type }),
@@ -118,7 +128,7 @@ async function uploadDocumentFile(
   file: File,
   title: string,
   type: DocType,
-  deviceId: string,
+  tankId: string,
   onProgress: (state: 'uploading' | 'done' | 'error', result?: DocumentRow) => void
 ): Promise<void> {
   onProgress('uploading')
@@ -126,7 +136,7 @@ async function uploadDocumentFile(
     const urlRes = await fetch('/api/minio/presigned-url', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ deviceId, type: 'document', fileName: file.name, mimeType: file.type }),
+      body: JSON.stringify({ tankId, type: 'document', fileName: file.name, mimeType: file.type }),
     })
     if (!urlRes.ok) throw new Error('Failed to get upload URL')
     const { url, fileKey } = await urlRes.json()
@@ -134,7 +144,7 @@ async function uploadDocumentFile(
     const uploadRes = await fetch(url, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file })
     if (!uploadRes.ok) throw new Error('Upload failed')
 
-    const recordRes = await fetch(`/api/devices/${deviceId}/documents`, {
+    const recordRes = await fetch(`/api/tanks/${tankId}/documents`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title, type, fileKey, fileName: file.name, fileSize: file.size, mimeType: file.type }),
@@ -147,28 +157,19 @@ async function uploadDocumentFile(
   }
 }
 
-const STATUS_LABELS: Record<DeviceStatus, string> = {
-  Working: 'Working',
-  Faulty: 'Faulty',
-  InRepair: 'In Repair',
-  Retired: 'Retired',
-  Lost: 'Lost',
-  RentedToFriend: 'Rented to a Friend',
-}
-
 // ---------- Component ----------
 
-export default function DeviceEditorForm({ mode, deviceId, initialData, allCases = [] }: Props) {
+export default function TankEditorForm({ mode, tankId, initialData }: Props) {
   const router = useRouter()
 
-  const [activeDeviceId, setActiveDeviceId] = useState(deviceId)
+  const [activeTankId, setActiveTankId] = useState(tankId)
 
   const [name, setName] = useState(initialData?.name ?? '')
   const [qrCode, setQrCode] = useState(initialData?.qrCode ?? '')
-  const [serialNumber, setSerialNumber] = useState(initialData?.serialNumber ?? '')
-  const [purchaseDate, setPurchaseDate] = useState(initialData?.purchaseDate ?? '')
-  const [status, setStatus] = useState<DeviceStatus>(initialData?.status ?? 'Working')
-  const [caseId, setCaseId] = useState(initialData?.caseId ?? '')
+  const [chemicalCompound, setChemicalCompound] = useState<ChemicalCompound>(initialData?.chemicalCompound ?? 'Other')
+  const [unit, setUnit] = useState(initialData?.unit ?? 'kg')
+  const [fullCapacity, setFullCapacity] = useState(initialData?.fullCapacity ?? '')
+  const [currentCapacity, setCurrentCapacity] = useState(initialData?.currentCapacity ?? '')
   const [notes, setNotes] = useState(initialData?.notes ?? '')
 
   const [images, setImages] = useState<ImageRow[]>(initialData?.images ?? [])
@@ -179,8 +180,6 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
   const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>([])
 
   const [docDraft, setDocDraft] = useState<{ file: File; title: string; type: DocType } | null>(null)
-
-  // Logbook entry draft
   const [logDraft, setLogDraft] = useState<{ date: string; comment: string } | null>(null)
   const [logSaving, setLogSaving] = useState(false)
 
@@ -194,8 +193,8 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
     | { kind: 'logbook'; id: string }
   const [confirmTarget, setConfirmTarget] = useState<ConfirmTarget | null>(null)
   const [confirmLoading, setConfirmLoading] = useState(false)
-  const [showDeleteDevice, setShowDeleteDevice] = useState(false)
-  const [deletingDevice, setDeletingDevice] = useState(false)
+  const [showDeleteTank, setShowDeleteTank] = useState(false)
+  const [deletingTank, setDeletingTank] = useState(false)
 
   const imageInputRef = useRef<HTMLInputElement>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
@@ -215,10 +214,10 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
   }
 
   async function processAndUploadImage(file: File, id?: string) {
-    const devId = id ?? activeDeviceId!
+    const tId = id ?? activeTankId!
     const placeholder: ImageRow = { fileName: file.name, fileSize: file.size, mimeType: file.type, url: '', uploading: true }
     setImages((prev) => [...prev, placeholder])
-    await uploadImageFile(file, devId, (state, result) => {
+    await uploadImageFile(file, tId, (state, result) => {
       setImages((prev) =>
         prev.map((img) =>
           img.fileName === file.name && img.uploading
@@ -230,7 +229,7 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
   }
 
   async function deleteImage(imageId: string) {
-    await fetch(`/api/devices/${activeDeviceId}/images/${imageId}`, { method: 'DELETE' })
+    await fetch(`/api/tanks/${activeTankId}/images/${imageId}`, { method: 'DELETE' })
     setImages((prev) => prev.filter((img) => img.id !== imageId))
   }
 
@@ -255,10 +254,10 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
   }
 
   async function uploadDocument(file: File, title: string, type: DocType, id?: string) {
-    const devId = id ?? activeDeviceId!
+    const tId = id ?? activeTankId!
     const placeholder: DocumentRow = { fileName: file.name, fileSize: file.size, mimeType: file.type, title, type, uploading: true }
     setDocuments((prev) => [...prev, placeholder])
-    await uploadDocumentFile(file, title, type, devId, (state, result) => {
+    await uploadDocumentFile(file, title, type, tId, (state, result) => {
       setDocuments((prev) =>
         prev.map((doc) =>
           doc.fileName === file.name && doc.uploading
@@ -270,16 +269,16 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
   }
 
   async function deleteDocument(docId: string) {
-    await fetch(`/api/devices/${activeDeviceId}/documents/${docId}`, { method: 'DELETE' })
+    await fetch(`/api/tanks/${activeTankId}/documents/${docId}`, { method: 'DELETE' })
     setDocuments((prev) => prev.filter((doc) => doc.id !== docId))
   }
 
   // ---------- Logbook ----------
 
   async function submitLogEntry() {
-    if (!logDraft || !activeDeviceId) return
+    if (!logDraft || !activeTankId) return
     setLogSaving(true)
-    const res = await fetch(`/api/devices/${activeDeviceId}/logbook`, {
+    const res = await fetch(`/api/tanks/${activeTankId}/logbook`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(logDraft),
@@ -293,7 +292,7 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
   }
 
   async function deleteLogEntry(entryId: string) {
-    await fetch(`/api/devices/${activeDeviceId}/logbook/${entryId}`, { method: 'DELETE' })
+    await fetch(`/api/tanks/${activeTankId}/logbook/${entryId}`, { method: 'DELETE' })
     setLogbook((prev) => prev.filter((e) => e.id !== entryId))
   }
 
@@ -313,17 +312,17 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
     setConfirmTarget(null)
   }
 
-  async function handleDeleteDevice() {
-    setDeletingDevice(true)
+  async function handleDeleteTank() {
+    setDeletingTank(true)
     try {
-      const res = await fetch(`/api/devices/${activeDeviceId}`, { method: 'DELETE' })
+      const res = await fetch(`/api/tanks/${activeTankId}`, { method: 'DELETE' })
       if (!res.ok) throw new Error('Failed to delete')
       router.push('/editor')
       router.refresh()
     } catch {
-      setError('Failed to delete device')
-      setDeletingDevice(false)
-      setShowDeleteDevice(false)
+      setError('Failed to delete tank')
+      setDeletingTank(false)
+      setShowDeleteTank(false)
     }
   }
 
@@ -334,54 +333,59 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
     setSaving(true)
     setError('')
 
+    const parsedFull = parseFloat(fullCapacity)
+    const parsedCurrent = parseFloat(currentCapacity)
+    if (isNaN(parsedFull) || parsedFull <= 0) { setError('Full capacity must be a positive number'); setSaving(false); return }
+    if (isNaN(parsedCurrent) || parsedCurrent < 0) { setError('Current capacity cannot be negative'); setSaving(false); return }
+
     try {
       if (mode === 'create') {
-        const res = await fetch('/api/devices', {
+        const res = await fetch('/api/tanks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name,
-            qrCode,
-            serialNumber: serialNumber || undefined,
-            purchaseDate: purchaseDate || undefined,
-            status,
-            caseId: caseId || undefined,
+            qrCode: qrCode || undefined,
+            chemicalCompound,
+            unit,
+            fullCapacity: parsedFull,
+            currentCapacity: parsedCurrent,
             notes: notes || undefined,
           }),
         })
         if (!res.ok) {
           const data = await res.json()
-          throw new Error(data.error ?? 'Failed to create device')
+          throw new Error(data.error ?? 'Failed to create tank')
         }
         const created = await res.json()
-        setActiveDeviceId(created.id)
+        setActiveTankId(created.id)
 
         await Promise.all([
           ...pendingImages.map((p) => processAndUploadImage(p.file, created.id)),
           ...pendingDocuments.map((p) => uploadDocument(p.file, p.title, p.type, created.id)),
         ])
 
-        router.push(`/devices/${created.id}`)
+        router.push(`/tanks/${created.id}`)
       } else {
-        const res = await fetch(`/api/devices/${activeDeviceId}`, {
+        const res = await fetch(`/api/tanks/${activeTankId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             name,
-            qrCode: qrCode || undefined,
-            serialNumber: serialNumber || null,
-            purchaseDate: purchaseDate || null,
-            status,
-            caseId: caseId || null,
+            qrCode: qrCode || null,
+            chemicalCompound,
+            unit,
+            fullCapacity: parsedFull,
+            currentCapacity: parsedCurrent,
             notes: notes || null,
           }),
         })
         if (!res.ok) {
           const data = await res.json()
-          throw new Error(data.error ?? 'Failed to update device')
+          throw new Error(data.error ?? 'Failed to update tank')
         }
         router.refresh()
-        router.push(`/devices/${activeDeviceId}`)
+        router.push(`/tanks/${activeTankId}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -399,16 +403,15 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Details</h2>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Device Name *</label>
-          <input type="text" required className="input-field" placeholder="e.g. Robe Pointe #3" value={name} onChange={(e) => setName(e.target.value)} />
+          <label className="block text-sm font-medium mb-1.5">Tank Name *</label>
+          <input type="text" required className="input-field" placeholder="e.g. CO2 Tank #3" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">QR Code {mode === 'create' ? '*' : ''}</label>
+          <label className="block text-sm font-medium mb-1.5">QR Code</label>
           <div className="flex gap-2">
             <input
               type="text"
-              required={mode === 'create'}
               className="input-field"
               placeholder="Scan or type the code from the sticker"
               value={qrCode}
@@ -426,30 +429,45 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Serial Number</label>
-          <input type="text" className="input-field" placeholder="Optional" value={serialNumber} onChange={(e) => setSerialNumber(e.target.value)} />
+          <label className="block text-sm font-medium mb-1.5">Chemical Compound</label>
+          <select className="input-field" value={chemicalCompound} onChange={(e) => setChemicalCompound(e.target.value as ChemicalCompound)}>
+            {(Object.keys(COMPOUND_LABELS) as ChemicalCompound[]).map((c) => (
+              <option key={c} value={c}>{COMPOUND_LABELS[c]}</option>
+            ))}
+          </select>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1.5">Purchase Date</label>
-          <input type="date" className="input-field" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+          <label className="block text-sm font-medium mb-1.5">Unit *</label>
+          <input type="text" required className="input-field" placeholder="e.g. kg, L, bar" value={unit} onChange={(e) => setUnit(e.target.value)} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Status</label>
-            <select className="input-field" value={status} onChange={(e) => setStatus(e.target.value as DeviceStatus)}>
-              {(Object.keys(STATUS_LABELS) as DeviceStatus[]).map((s) => (
-                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium mb-1.5">Full Capacity *</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0.01"
+              required
+              className="input-field"
+              placeholder="e.g. 50"
+              value={fullCapacity}
+              onChange={(e) => setFullCapacity(e.target.value)}
+            />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1.5">Assigned to Case</label>
-            <select className="input-field" value={caseId} onChange={(e) => setCaseId(e.target.value)}>
-              <option value="">-- Standalone --</option>
-              {allCases.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <label className="block text-sm font-medium mb-1.5">Current Capacity *</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              className="input-field"
+              placeholder="e.g. 32"
+              value={currentCapacity}
+              onChange={(e) => setCurrentCapacity(e.target.value)}
+            />
           </div>
         </div>
 
@@ -490,7 +508,7 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
               <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-foreground/10 bg-surface">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.previewUrl} alt={p.file.name} className="w-full h-full object-cover opacity-60" />
-                <button type="button" onClick={() => removePendingImage(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500/80 transition-colors" aria-label="Remove">×</button>
+                <button type="button" onClick={() => removePendingImage(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500/80 transition-colors" aria-label="Remove">&times;</button>
               </div>
             ))}
           </div>
@@ -622,7 +640,7 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium mb-1">Comment</label>
-                  <input type="text" className="input-field" placeholder="e.g. Prism replaced" value={logDraft.comment} onChange={(e) => setLogDraft((d) => d ? { ...d, comment: e.target.value } : d)} />
+                  <input type="text" className="input-field" placeholder="e.g. Refilled to 50kg" value={logDraft.comment} onChange={(e) => setLogDraft((d) => d ? { ...d, comment: e.target.value } : d)} />
                 </div>
               </div>
               <div className="flex gap-2">
@@ -667,28 +685,28 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
 
       <div className="flex gap-3 flex-wrap">
         <button type="submit" disabled={saving} className="btn-primary">
-          {saving ? 'Saving...' : mode === 'create' ? 'Create Device' : 'Save Changes'}
+          {saving ? 'Saving...' : mode === 'create' ? 'Create Tank' : 'Save Changes'}
         </button>
         <button type="button" onClick={() => router.back()} className="btn-ghost">Cancel</button>
         {mode === 'edit' && (
           <button
             type="button"
-            onClick={() => setShowDeleteDevice(true)}
+            onClick={() => setShowDeleteTank(true)}
             className="ml-auto bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors"
           >
-            Delete Device
+            Delete Tank
           </button>
         )}
       </div>
 
-      {showDeleteDevice && (
+      {showDeleteTank && (
         <ConfirmModal
-          title="Delete Device"
+          title="Delete Tank"
           message={`Are you sure you want to delete "${name}"? This cannot be undone.`}
           confirmLabel="Delete"
-          onConfirm={handleDeleteDevice}
-          onCancel={() => setShowDeleteDevice(false)}
-          loading={deletingDevice}
+          onConfirm={handleDeleteTank}
+          onCancel={() => setShowDeleteTank(false)}
+          loading={deletingTank}
         />
       )}
 
@@ -709,7 +727,6 @@ export default function DeviceEditorForm({ mode, deviceId, initialData, allCases
           loading={confirmLoading}
         />
       )}
-
     </form>
   )
 }

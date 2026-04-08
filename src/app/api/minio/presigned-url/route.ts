@@ -10,6 +10,7 @@ const schema = z.union([
   z.object({
     caseId: z.string().min(1),
     deviceId: z.undefined().optional(),
+    tankId: z.undefined().optional(),
     type: z.enum(['image', 'document']),
     fileName: z.string().min(1),
     mimeType: z.string().min(1),
@@ -17,6 +18,15 @@ const schema = z.union([
   z.object({
     deviceId: z.string().min(1),
     caseId: z.undefined().optional(),
+    tankId: z.undefined().optional(),
+    type: z.enum(['image', 'document']),
+    fileName: z.string().min(1),
+    mimeType: z.string().min(1),
+  }),
+  z.object({
+    tankId: z.string().min(1),
+    caseId: z.undefined().optional(),
+    deviceId: z.undefined().optional(),
     type: z.enum(['image', 'document']),
     fileName: z.string().min(1),
     mimeType: z.string().min(1),
@@ -54,8 +64,8 @@ export async function POST(req: Request) {
   }
 
   const { type, mimeType } = parsed.data
-  const ownerId = parsed.data.deviceId ?? parsed.data.caseId!
-  const ownerPrefix = parsed.data.deviceId ? 'devices' : 'cases'
+  const ownerId = parsed.data.deviceId ?? parsed.data.tankId ?? parsed.data.caseId!
+  const ownerPrefix = parsed.data.deviceId ? 'devices' : parsed.data.tankId ? 'tanks' : 'cases'
 
   const allowedTypes = type === 'image' ? ALLOWED_IMAGE_TYPES : ALLOWED_DOC_TYPES
   if (!allowedTypes.includes(mimeType)) {

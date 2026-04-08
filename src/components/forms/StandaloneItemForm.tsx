@@ -18,7 +18,7 @@ export default function StandaloneItemForm({ mode, itemId, initialData }: Props)
   const router = useRouter()
 
   const [name, setName] = useState(initialData?.name ?? '')
-  const [quantity, setQuantity] = useState(initialData?.quantity ?? 1)
+  const [quantity, setQuantity] = useState(String(initialData?.quantity ?? 1))
   const [comment, setComment] = useState(initialData?.comment ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -30,9 +30,16 @@ export default function StandaloneItemForm({ mode, itemId, initialData }: Props)
     setSaving(true)
     setError('')
 
+    const parsedQty = parseInt(quantity)
+    if (isNaN(parsedQty) || parsedQty < 1) {
+      setError('Quantity must be at least 1')
+      setSaving(false)
+      return
+    }
+
     const payload = {
       name,
-      quantity,
+      quantity: parsedQty,
       comment: comment || undefined,
     }
 
@@ -108,7 +115,7 @@ export default function StandaloneItemForm({ mode, itemId, initialData }: Props)
           step={1}
           className="input-field"
           value={quantity}
-          onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+          onChange={(e) => setQuantity(e.target.value)}
         />
       </div>
 

@@ -8,14 +8,13 @@ export default async function InventoryPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const [cases, devices, consumables, standaloneItems] = await Promise.all([
+  const [cases, devices, consumables, standaloneItems, tanks] = await Promise.all([
     prisma.case.findMany({
       where: { deletedAt: null },
       orderBy: { updatedAt: 'desc' },
       include: {
         items: { select: { name: true } },
-        _count: { select: { items: true, images: true, documents: true } },
-        createdBy: { select: { name: true } },
+        _count: { select: { items: true, devices: true } },
       },
     }),
     prisma.device.findMany({
@@ -28,6 +27,7 @@ export default async function InventoryPage() {
     }),
     prisma.consumable.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' } }),
     prisma.item.findMany({ where: { caseId: null, deletedAt: null }, orderBy: { name: 'asc' } }),
+    prisma.tank.findMany({ where: { deletedAt: null }, orderBy: { name: 'asc' } }),
   ])
 
   const role = session.user.role
@@ -41,6 +41,7 @@ export default async function InventoryPage() {
         devices={devices}
         consumables={consumables}
         standaloneItems={standaloneItems}
+        tanks={tanks}
         canEdit={canEdit}
         isAdmin={role === 'ADMIN'}
       />
