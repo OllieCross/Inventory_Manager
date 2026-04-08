@@ -266,7 +266,7 @@ export default function GroupForm({ mode, groupId, initialData, allCases, allDev
             <div className="space-y-1">
               <p className="text-xs text-muted">Devices</p>
               {deviceMembers.map((m) => (
-                <MemberRow key={m.id} label={`${m.name} — ${STATUS_LABELS[m.status] ?? m.status}`} onRemove={() => removeMember('device', m.id)} />
+                <MemberRow key={m.id} label={`${m.name} - ${STATUS_LABELS[m.status] ?? m.status}`} onRemove={() => removeMember('device', m.id)} />
               ))}
             </div>
           )}
@@ -284,7 +284,7 @@ export default function GroupForm({ mode, groupId, initialData, allCases, allDev
             <div className="space-y-1">
               <p className="text-xs text-muted">Consumables</p>
               {consumableMembers.map((m) => (
-                <MemberRow key={m.id} label={`${m.name} — ${m.quantityNeeded} ${m.unit}`} onRemove={() => removeMember('consumable', m.id)} />
+                <MemberRow key={m.id} label={`${m.name} - ${m.quantityNeeded} ${m.unit}`} onRemove={() => removeMember('consumable', m.id)} />
               ))}
             </div>
           )}

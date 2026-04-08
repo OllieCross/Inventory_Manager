@@ -4,6 +4,14 @@ All notable changes to SFX Pro One Inventory Manager are documented here.
 
 ---
 
+## v1.3.11 - 2026-04-09
+
+### Fixed
+
+- **Admin - delete user**: clicking Delete now opens a confirmation modal (consistent with the rest of the app) instead of spawning inline confirm/cancel buttons; confirming the modal correctly calls the API and removes the user
+
+---
+
 ## v1.3.10 - 2026-04-09
 
 ### Added
