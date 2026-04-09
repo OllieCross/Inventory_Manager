@@ -16,7 +16,7 @@ const STATUS_COLORS: Record<string, string> = {
   Faulty: 'text-red-400',
   InRepair: 'text-yellow-400',
   Retired: 'text-muted',
-  Lost: 'text-black dark:text-white',
+  Lost: 'text-foreground',
   RentedToFriend: 'text-blue-400',
 }
 
@@ -42,7 +42,7 @@ export default function DeviceList({ devices, canEdit }: Props) {
   return (
     <div className="space-y-2">
       {devices.map((d) => {
-        const borderColor = d.status === 'Faulty' ? 'border-l-red-600' : d.status === 'Lost' ? 'border-l-black dark:border-l-white' : d.status === 'InRepair' ? 'border-l-yellow-500' : d.status === 'Working' ? 'border-l-green-600' : 'border-l-transparent'
+        const borderColor = d.status === 'Faulty' ? 'border-l-red-600' : d.status === 'Lost' ? 'border-l-foreground' : d.status === 'InRepair' ? 'border-l-yellow-500' : d.status === 'Working' ? 'border-l-green-600' : 'border-l-transparent'
         return (
         <div key={d.id} className={`card flex items-center justify-between gap-4 border-l-[3px] ${borderColor}`}>
           <div className="min-w-0">

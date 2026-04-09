@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 type MemberType = 'stagehand' | 'case' | 'device' | 'item' | 'consumable' | 'tank' | 'pyro'
 
@@ -133,6 +134,16 @@ export default function EventForm({
 
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showDelete, setShowDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDelete() {
+    if (!eventId) return
+    setDeleting(true)
+    await fetch(`/api/events/${eventId}`, { method: 'DELETE' })
+    router.push('/events')
+    router.refresh()
+  }
 
   // ---------- Helpers ----------
 
@@ -202,6 +213,10 @@ export default function EventForm({
     } else if (invType === 'item') {
       const opt = allItems.find((i) => i.id === invId)
       if (!opt) return
+      if (qty! > opt.quantity) {
+        setInvQtyError(`Only ${opt.quantity} available in inventory.`)
+        return
+      }
       member = { type: 'item', id: opt.id, name: opt.name, quantity: qty! }
     } else if (invType === 'consumable') {
       const opt = allConsumables.find((c) => c.id === invId)
@@ -272,10 +287,10 @@ export default function EventForm({
 
   const invOptions = useMemo(() => {
     const sq = invSearch.trim().toLowerCase()
-    let opts: { id: string; name: string; status?: string; unit?: string }[] = []
+    let opts: { id: string; name: string; status?: string; unit?: string; maxQty?: number }[] = []
     if (invType === 'case') opts = allCases.filter((c) => !isMember('case', c.id))
     else if (invType === 'device') opts = allDevices.filter((d) => !isMember('device', d.id))
-    else if (invType === 'item') opts = allItems.filter((i) => !isMember('item', i.id))
+    else if (invType === 'item') opts = allItems.filter((i) => !isMember('item', i.id)).map((i) => ({ ...i, maxQty: i.quantity }))
     else if (invType === 'consumable') opts = allConsumables.filter((c) => !isMember('consumable', c.id))
     else if (invType === 'tank') opts = allTanks.filter((t) => !isMember('tank', t.id)).map((t) => ({ ...t, unit: `${COMPOUND_LABELS[t.chemicalCompound] ?? t.chemicalCompound} - ${t.unit}` }))
     else opts = allPyros.filter((p) => !isMember('pyro', p.id)).map((p) => ({ id: p.id, name: p.name, unit: p.category + (p.brand ? ` - ${p.brand}` : '') }))
@@ -537,11 +552,12 @@ export default function EventForm({
           <div className="flex gap-2 flex-wrap">
             <select className="input-field flex-1" value={invId} onChange={(e) => setInvId(e.target.value)}>
               <option value="">-- Select {invType} --</option>
-              {(invOptions as Array<{ id: string; name: string; status?: string; unit?: string }>).map((opt) => (
+              {(invOptions as Array<{ id: string; name: string; status?: string; unit?: string; maxQty?: number }>).map((opt) => (
                 <option key={opt.id} value={opt.id}>
                   {opt.name}
                   {opt.status ? ` (${STATUS_LABELS[opt.status] ?? opt.status})` : ''}
                   {opt.unit ? ` (${opt.unit})` : ''}
+                  {opt.maxQty != null ? ` (${opt.maxQty}pcs)` : ''}
                 </option>
               ))}
             </select>
@@ -621,12 +637,31 @@ export default function EventForm({
 
       {error && <p className="text-red-400 text-sm">{error}</p>}
 
-      <div className="flex flex-col gap-2">
-        <button type="submit" disabled={saving} className="btn-primary w-full">
+      <div className="flex gap-3 flex-wrap">
+        <button type="submit" disabled={saving} className="btn-primary">
           {saving ? 'Saving...' : mode === 'create' ? 'Create Event' : 'Save Changes'}
         </button>
-        <button type="button" onClick={() => router.back()} className="btn-ghost w-full">Cancel</button>
+        <button type="button" onClick={() => router.back()} className="btn-ghost">Cancel</button>
+        {mode === 'edit' && (
+          <button
+            type="button"
+            onClick={() => setShowDelete(true)}
+            className="ml-auto bg-red-500/20 hover:bg-red-500/30 text-red-400 font-medium px-4 py-2 rounded-lg text-sm transition-colors"
+          >
+            Delete Event
+          </button>
+        )}
       </div>
+
+      {showDelete && (
+        <ConfirmModal
+          title="Delete event"
+          message={`Are you sure you want to delete "${initialData?.name}"? This cannot be undone.`}
+          onConfirm={handleDelete}
+          onCancel={() => setShowDelete(false)}
+          loading={deleting}
+        />
+      )}
     </form>
   )
 }

@@ -3,7 +3,6 @@ import { redirect, notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Header from '@/components/layout/Header'
 import EventForm from '@/components/forms/EventForm'
-import DeleteEventButton from '@/components/events/DeleteEventButton'
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -108,9 +107,6 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
           allPyros={allPyros}
           allGroups={allGroups}
         />
-        <div className="mt-2">
-          <DeleteEventButton eventId={id} eventName={event.name} />
-        </div>
       </main>
     </>
   )

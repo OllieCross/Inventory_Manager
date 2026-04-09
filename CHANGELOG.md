@@ -4,6 +4,17 @@ All notable changes to SFX Pro One Inventory Manager are documented here.
 
 ---
 
+## v1.3.13 - 2026-04-09
+
+### Fixed
+
+- **Event form - button layout**: action buttons at the bottom of the create/edit event form now match the case editor layout - Save and Cancel sit inline on the left, Delete Event is pushed to the right; Delete is no longer a separate full-width button below the form
+- **Event form - item quantity cap**: adding a standalone item to an event now validates that the requested quantity does not exceed the total stock; the item dropdown shows the available count in parentheses (e.g. "Hammer (4pcs)") and an inline error is shown if the entered quantity is too high
+- **Inventory - Device "Lost" border and text**: left border and status label for Lost devices now correctly use the foreground colour token instead of a hardcoded black/white pair, ensuring proper contrast in both light mode (black) and dark mode (white) regardless of OS colour scheme preference
+- **Edit case - scroll after add item**: tapping "+ Add Item" now scrolls the new row to the centre of the screen instead of the very bottom of the viewport
+
+---
+
 ## v1.3.12 - 2026-04-09
 
 ### Added

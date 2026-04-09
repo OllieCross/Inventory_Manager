@@ -212,7 +212,7 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
 
   function addItem() {
     setItems((prev) => [...prev, { name: '', quantity: 1, comment: '', sortOrder: prev.length }])
-    setTimeout(() => gearListEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }), 50)
+    setTimeout(() => gearListEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50)
   }
 
   function updateItem(index: number, field: keyof ItemRow, value: string | number) {
