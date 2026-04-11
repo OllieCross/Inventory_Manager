@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
+
 const EVENT_STATUS_LABELS: Record<string, string> = {
   Planned: 'Planned', Confirmed: 'Confirmed', Completed: 'Completed',
   Cancelled: 'Cancelled', NeedsDetails: 'Needs Details',
@@ -34,8 +35,11 @@ type EventRow = {
 type Props = {
   events: EventRow[]
   userId: string
+  nowISO: string
   todayISO: string
   tomorrowISO: string
+  tomorrowEndISO: string
+  canEdit: boolean
 }
 
 function formatStartDateTime(iso: string) {
@@ -49,12 +53,14 @@ function formatStartDateTime(iso: string) {
 
 type FilterOption = 'all' | 'upcoming' | 'completed'
 
-export default function EventsPageClient({ events, userId, todayISO, tomorrowISO }: Props) {
+export default function EventsPageClient({ events, userId, nowISO, todayISO, tomorrowISO, tomorrowEndISO, canEdit }: Props) {
+  const now = new Date(nowISO).getTime()
   const todayStart = new Date(todayISO).getTime()
-  const tomorrowEnd = new Date(tomorrowISO).getTime()
-  const [filter, setFilter] = useState<FilterOption>('all')
-
   const tomorrowStart = new Date(tomorrowISO).getTime()
+  const tomorrowEnd = new Date(tomorrowEndISO).getTime()
+  const [filter, setFilter] = useState<FilterOption>('all')
+  const [completingId, setCompletingId] = useState<string | null>(null)
+  const [localStatuses, setLocalStatuses] = useState<Record<string, string>>({})
 
   function isHighlighted(event: EventRow) {
     const start = new Date(event.startDate).getTime()
@@ -122,6 +128,9 @@ export default function EventsPageClient({ events, userId, todayISO, tomorrowISO
       ) : sorted.map((event) => {
         const highlighted = isHighlighted(event)
         const label = highlightLabel(event)
+        const currentStatus = localStatuses[event.id] ?? event.status
+        const isCompleted = currentStatus === 'Completed'
+        const showCompleteBtn = canEdit && !isCompleted && (now - new Date(event.startDate).getTime() >= 48 * 60 * 60 * 1000)
         return (
           <div
             key={event.id}
@@ -146,16 +155,16 @@ export default function EventsPageClient({ events, userId, todayISO, tomorrowISO
 
             <div className="flex items-center gap-4 text-xs flex-wrap">
               <span className="text-muted">{formatStartDateTime(event.startDate)}</span>
-              <span className={STATUS_COLORS[event.status] ?? 'text-muted'}>
-                {EVENT_STATUS_LABELS[event.status] ?? event.status}
+              <span className={STATUS_COLORS[currentStatus] ?? 'text-muted'}>
+                {EVENT_STATUS_LABELS[currentStatus] ?? currentStatus}
               </span>
               <span className={INVOICE_COLORS[event.invoiceStatus] ?? 'text-muted'}>
                 {INVOICE_LABELS[event.invoiceStatus] ?? event.invoiceStatus}
               </span>
             </div>
 
-            {event.stagehands.length > 0 && (
-              <div className="flex items-center gap-1.5 flex-wrap">
+            {(event.stagehands.length > 0 || showCompleteBtn) && (
+              <div className="relative flex items-center gap-1.5 flex-wrap">
                 {event.stagehands.map((s) => (
                   <span
                     key={s.userId}
@@ -164,6 +173,28 @@ export default function EventsPageClient({ events, userId, todayISO, tomorrowISO
                     {s.userName}
                   </span>
                 ))}
+                {showCompleteBtn && (
+                  <button
+                    className="relative z-10 ml-auto text-xs px-2 py-0.5 rounded-full border border-foreground/20 text-muted hover:border-green-500 hover:text-green-400 transition-colors shrink-0"
+                    disabled={completingId === event.id}
+                    onClick={async (e) => {
+                      e.preventDefault()
+                      setCompletingId(event.id)
+                      try {
+                        const res = await fetch(`/api/events/${event.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ status: 'Completed' }),
+                        })
+                        if (res.ok) setLocalStatuses((prev) => ({ ...prev, [event.id]: 'Completed' }))
+                      } finally {
+                        setCompletingId(null)
+                      }
+                    }}
+                  >
+                    {completingId === event.id ? '...' : 'Completed?'}
+                  </button>
+                )}
               </div>
             )}
           </div>

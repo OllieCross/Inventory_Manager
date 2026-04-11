@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 
@@ -523,31 +523,43 @@ export default function EventForm({
       )}
 
       {/* Inventory */}
-      <section className="card space-y-3">
+      <section className="card space-y-4">
         <h2 className="text-sm font-semibold text-muted uppercase tracking-wider">Inventory</h2>
-        <div className="space-y-3">
-          {/* Type tabs */}
-          <div className="flex gap-2 flex-wrap">
-            {(['case', 'device', 'item', 'consumable', 'tank', 'pyro'] as const).map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => { setInvType(t); setInvId(''); setInvSearch(''); setInvQtyRaw('1'); setInvQtyError(''); setInvCaseFilter('__none__') }}
-                className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${invType === t ? 'border-brand text-brand' : 'border-foreground/10 text-muted hover:text-foreground'}`}
-              >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </button>
-            ))}
-          </div>
 
-          {/* Search */}
-          <input
-            type="search"
-            placeholder={`Search ${invType}s...`}
-            className="input-field"
-            value={invSearch}
-            onChange={(e) => { setInvSearch(e.target.value); setInvId('') }}
-          />
+        {/* Type tabs — scrollable segmented control */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none -mx-1 px-1 pb-0.5">
+          {(['case', 'device', 'item', 'consumable', 'tank', 'pyro'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => { setInvType(t); setInvId(''); setInvSearch(''); setInvQtyRaw('1'); setInvQtyError(''); setInvCaseFilter('__none__') }}
+              className={`shrink-0 text-xs px-3.5 py-2 rounded-lg font-medium transition-all duration-200 whitespace-nowrap active:scale-95 ${
+                invType === t
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'bg-foreground/5 text-muted hover:text-foreground hover:bg-foreground/10'
+              }`}
+            >
+              {t === 'consumable' ? 'Consumable' : t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Picker — remounts on tab change to trigger fade-in animation */}
+        <div key={invType} className="inv-picker-enter space-y-2.5">
+
+          {/* Search with icon */}
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              type="search"
+              placeholder={`Search ${invType}s...`}
+              className="input-field pl-9"
+              value={invSearch}
+              onChange={(e) => { setInvSearch(e.target.value); setInvId('') }}
+            />
+          </div>
 
           {/* Case filter (device / item only) */}
           {(invType === 'device' || invType === 'item') && (
@@ -556,97 +568,105 @@ export default function EventForm({
               value={invCaseFilter}
               onChange={(e) => { setInvCaseFilter(e.target.value); setInvId('') }}
             >
-              <option value="__none__">No case</option>
+              <option value="__none__">No case (standalone)</option>
               {allCases.filter((c) => !isMember('case', c.id)).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           )}
 
-          {/* Picker row */}
-          <div className="space-y-2">
-            <select className="input-field" value={invId} onChange={(e) => setInvId(e.target.value)}>
-              <option value="">-- Select {invType} --</option>
-              {(invOptions as Array<{ id: string; name: string; status?: string; unit?: string; maxQty?: number }>).map((opt) => (
-                <option key={opt.id} value={opt.id}>
-                  {opt.name}
-                  {opt.status ? ` (${STATUS_LABELS[opt.status] ?? opt.status})` : ''}
-                  {opt.unit ? ` (${opt.unit})` : ''}
-                  {opt.maxQty != null ? ` (${opt.maxQty}pcs)` : ''}
-                </option>
-              ))}
-            </select>
-            <div className="flex gap-2">
-              {(invType === 'consumable' || invType === 'item' || invType === 'pyro') && (
-                <div className="flex flex-col gap-1">
-                  <input
-                    type="text"
-                    inputMode={invType === 'consumable' ? 'decimal' : 'numeric'}
-                    className={`input-field w-24 ${invQtyError ? 'border-red-500' : ''}`}
-                    placeholder="Qty"
-                    value={invQtyRaw}
-                    onChange={(e) => { setInvQtyRaw(e.target.value); setInvQtyError('') }}
-                  />
-                  {invQtyError && <p className="text-red-400 text-xs">{invQtyError}</p>}
-                </div>
-              )}
-              <button type="button" onClick={addInventory} disabled={!invId} className="btn-primary text-sm h-[42px] px-6">
-                Add
-              </button>
+          {/* Item select */}
+          <select className="input-field" value={invId} onChange={(e) => setInvId(e.target.value)}>
+            <option value="">-- Select {invType} --</option>
+            {(invOptions as Array<{ id: string; name: string; status?: string; unit?: string; maxQty?: number }>).map((opt) => (
+              <option key={opt.id} value={opt.id}>
+                {opt.name}
+                {opt.status ? ` (${STATUS_LABELS[opt.status] ?? opt.status})` : ''}
+                {opt.unit ? ` · ${opt.unit}` : ''}
+                {opt.maxQty != null ? ` (${opt.maxQty}pcs)` : ''}
+              </option>
+            ))}
+          </select>
+
+          {/* Qty + Add */}
+          {(invType === 'consumable' || invType === 'item' || invType === 'pyro') ? (
+            <div className="space-y-1">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  inputMode={invType === 'consumable' ? 'decimal' : 'numeric'}
+                  className={`input-field w-20 shrink-0 text-center ${invQtyError ? 'border-red-500 focus:ring-red-500/30' : ''}`}
+                  placeholder="Qty"
+                  value={invQtyRaw}
+                  onChange={(e) => { setInvQtyRaw(e.target.value); setInvQtyError('') }}
+                />
+                <button
+                  type="button"
+                  onClick={addInventory}
+                  disabled={!invId}
+                  className="btn-primary text-sm h-[42px] flex-1 transition-all duration-200"
+                >
+                  Add
+                </button>
+              </div>
+              {invQtyError && <p className="text-red-400 text-xs">{invQtyError}</p>}
             </div>
-          </div>
+          ) : (
+            <button
+              type="button"
+              onClick={addInventory}
+              disabled={!invId}
+              className="btn-primary text-sm h-[42px] w-full transition-all duration-200"
+            >
+              Add
+            </button>
+          )}
         </div>
 
-        {/* Current inventory */}
+        {/* Added inventory list */}
         {(caseMembers.length + deviceMembers.length + itemMembers.length + consumableMembers.length + tankMembers.length + pyroMembers.length) > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-3 border-t border-foreground/10">
             {caseMembers.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted">Cases</p>
+              <InventoryGroup label="Cases">
                 {caseMembers.map((m) => (
                   <MemberRow key={m.id} label={m.name} onRemove={() => removeMember('case', m.id)} />
                 ))}
-              </div>
+              </InventoryGroup>
             )}
             {deviceMembers.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted">Devices</p>
+              <InventoryGroup label="Devices">
                 {deviceMembers.map((m) => (
-                  <MemberRow key={m.id} label={`${m.name} (${STATUS_LABELS[m.status] ?? m.status})`} onRemove={() => removeMember('device', m.id)} />
+                  <MemberRow key={m.id} label={m.name} sublabel={STATUS_LABELS[m.status] ?? m.status} onRemove={() => removeMember('device', m.id)} />
                 ))}
-              </div>
+              </InventoryGroup>
             )}
             {itemMembers.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted">Items</p>
+              <InventoryGroup label="Items">
                 {itemMembers.map((m) => (
-                  <MemberRow key={m.id} label={`${m.name} (x${m.quantity})`} onRemove={() => removeMember('item', m.id)} />
+                  <MemberRow key={m.id} label={m.name} sublabel={`×${m.quantity}`} onRemove={() => removeMember('item', m.id)} />
                 ))}
-              </div>
+              </InventoryGroup>
             )}
             {consumableMembers.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted">Consumables</p>
+              <InventoryGroup label="Consumables">
                 {consumableMembers.map((m) => (
-                  <MemberRow key={m.id} label={`${m.name} - ${m.quantityNeeded} ${m.unit}`} onRemove={() => removeMember('consumable', m.id)} />
+                  <MemberRow key={m.id} label={m.name} sublabel={`${m.quantityNeeded} ${m.unit}`} onRemove={() => removeMember('consumable', m.id)} />
                 ))}
-              </div>
+              </InventoryGroup>
             )}
             {tankMembers.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted">Tanks</p>
+              <InventoryGroup label="Tanks">
                 {tankMembers.map((m) => (
-                  <MemberRow key={m.id} label={`${m.name} (${COMPOUND_LABELS[m.chemicalCompound] ?? m.chemicalCompound} - ${m.unit})`} onRemove={() => removeMember('tank', m.id)} />
+                  <MemberRow key={m.id} label={m.name} sublabel={`${COMPOUND_LABELS[m.chemicalCompound] ?? m.chemicalCompound} · ${m.unit}`} onRemove={() => removeMember('tank', m.id)} />
                 ))}
-              </div>
+              </InventoryGroup>
             )}
             {pyroMembers.length > 0 && (
-              <div className="space-y-1">
-                <p className="text-xs text-muted">Pyro</p>
+              <InventoryGroup label="Pyro">
                 {pyroMembers.map((m) => (
-                  <MemberRow key={m.id} label={`${m.name} (${m.category}) x${m.quantity}`} onRemove={() => removeMember('pyro', m.id)} />
+                  <MemberRow key={m.id} label={m.name} sublabel={`${m.category} · ×${m.quantity}`} onRemove={() => removeMember('pyro', m.id)} />
                 ))}
-              </div>
+              </InventoryGroup>
             )}
           </div>
         )}
@@ -683,12 +703,31 @@ export default function EventForm({
   )
 }
 
-function MemberRow({ label, onRemove }: { label: string; onRemove: () => void }) {
+function InventoryGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="card flex items-center justify-between gap-3 py-2 px-3">
-      <span className="text-sm truncate">{label}</span>
-      <button type="button" onClick={onRemove} className="text-red-400/60 hover:text-red-400 text-xs transition-colors shrink-0">
-        Remove
+    <div className="space-y-1.5">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted/70 px-1">{label}</p>
+      {children}
+    </div>
+  )
+}
+
+function MemberRow({ label, sublabel, onRemove }: { label: string; sublabel?: string; onRemove: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3 bg-foreground/[0.04] hover:bg-foreground/[0.07] border border-foreground/[0.07] rounded-lg px-3 py-2 transition-colors duration-150">
+      <div className="min-w-0 flex items-center gap-2">
+        <span className="text-sm truncate">{label}</span>
+        {sublabel && <span className="text-xs text-muted shrink-0">{sublabel}</span>}
+      </div>
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label={`Remove ${label}`}
+        className="shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-muted/50 hover:text-red-400 hover:bg-red-400/10 transition-all duration-150"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
       </button>
     </div>
   )

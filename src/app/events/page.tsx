@@ -21,6 +21,7 @@ export default async function EventsPage() {
   // Compute today/tomorrow boundaries (UTC midnight) for the client highlight check
   const now = new Date()
   const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  const tomorrowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1))
   const tomorrowEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2))
 
   const serialized = events.map((e) => ({
@@ -53,8 +54,11 @@ export default async function EventsPage() {
           <EventsPageClient
             events={serialized}
             userId={session.user.id}
+            nowISO={now.toISOString()}
             todayISO={todayStart.toISOString()}
-            tomorrowISO={tomorrowEnd.toISOString()}
+            tomorrowISO={tomorrowStart.toISOString()}
+            tomorrowEndISO={tomorrowEnd.toISOString()}
+            canEdit={canEdit}
           />
         )}
       </main>

@@ -4,6 +4,25 @@ All notable changes to SFX Pro One Inventory Manager are documented here.
 
 ---
 
+## v1.4.6 - 2026-04-11
+
+### Added
+
+- **Events - "Completed?" quick action**: event cards that are more than 48 hours past their start time now show a small "Completed?" button aligned to the right of the crew pills row (visible to editors only); tapping it marks the event as Completed instantly without a confirmation modal or page reload
+- **Event form - inventory section redesign**: the inventory picker section has been fully redesigned with a modern, more polished UI and subtle animations:
+  - Type tabs replaced with a horizontally scrollable row of filled pill buttons; the active tab uses the brand blue fill with white text; inactive tabs use a soft background with hover state; all transitions are 200ms
+  - Switching between tabs now triggers a fade-in and upward slide animation on the picker content (180ms ease-out), giving the section a fluid feel
+  - Search input now has an inset search icon on the left
+  - The Add button is full-width when no quantity field is shown; when a quantity is required (items, consumables, pyro) it sits next to a compact centered quantity input
+  - Added inventory items are now grouped under small all-caps category labels (Cases, Devices, Items, Consumables, Tanks, Pyro) separated from the picker by a divider line
+  - Individual item rows use a lighter card style with name and detail (status, quantity, unit) shown side by side; the "Remove" text button is replaced with an × icon that highlights red on hover
+
+### Fixed
+
+- **Events - TOMORROW label never showing**: the TOMORROW highlight label was never displayed due to an off-by-one in the date boundaries passed from the server to the client; the server now passes the start of tomorrow and the end of tomorrow separately so the TODAY and TOMORROW windows are calculated correctly
+
+---
+
 ## v1.4.5 - 2026-04-11
 
 ### Added
