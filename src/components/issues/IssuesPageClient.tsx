@@ -71,7 +71,7 @@ export default function IssuesPageClient({ faultyDevices, manualIssues: initialI
       const created = await res.json()
       const cd = new Date(created.createdAt)
       const createdAtFmt = `${cd.getDate().toString().padStart(2,'0')}/${(cd.getMonth()+1).toString().padStart(2,'0')}/${cd.getFullYear()}`
-      setIssues((prev) => [{ id: created.id, description: created.description, createdAt: createdAtFmt, userName: created.user?.name ?? 'Deleted user', device: created.device, case: created.case, item: created.item }, ...prev])
+      setIssues((prev) => [{ id: created.id, description: created.description, createdAt: createdAtFmt, userName: created.user?.name ?? 'Deleted user', device: created.device, case: created.case, item: created.item, tank: created.tank ?? null }, ...prev])
       setShowForm(false)
       setDescription('')
       setEntityId('')
