@@ -125,7 +125,7 @@ export default function EventsPageClient({ events, userId, todayISO, tomorrowISO
         return (
           <div
             key={event.id}
-            className={`card relative space-y-2`}
+            className={`card relative space-y-2 ${label ? 'pt-2' : ''}`}
             style={highlighted ? {
               animation: 'eventPulse 2.5s ease-in-out infinite',
               transform: 'translateY(-1px)',
@@ -134,9 +134,10 @@ export default function EventsPageClient({ events, userId, todayISO, tomorrowISO
             {/* Full-card tap target */}
             <Link href={`/events/${event.id}`} className="absolute inset-0 rounded-xl" aria-label={`View ${event.name}`} />
 
+            {label && <p className="text-xs font-medium text-brand tracking-widest text-center w-full -mb-1">{label}</p>}
+
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                {label && <p className="text-xs font-semibold text-brand tracking-widest mb-0.5 text-center">{label}</p>}
                 <p className="font-medium break-words">{event.name}</p>
                 <p className="text-sm text-muted break-words">{event.venueName}{event.location ? ` - ${event.location}` : ''}</p>
               </div>
