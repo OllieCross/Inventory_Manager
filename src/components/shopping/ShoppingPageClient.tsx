@@ -55,11 +55,6 @@ export default function ShoppingPageClient({ consumables, tanks, pyros }: Props)
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center gap-3">
-        <Link href="/editor" className="text-muted hover:text-foreground transition-colors text-sm">
-          ← Inventory
-        </Link>
-      </div>
       <div>
         <h1 className="text-xl font-bold">Shopping List</h1>
         <p className="text-muted text-sm mt-1">
@@ -93,7 +88,7 @@ export default function ShoppingPageClient({ consumables, tanks, pyros }: Props)
                     <p className="font-medium text-sm break-words">{c.name}</p>
                   </div>
                   <p className="text-xs text-muted mt-0.5">
-                    {c.stockQuantity} {c.unit} — critical at {c.criticalThreshold} {c.unit}
+                    {c.stockQuantity} {c.unit} - critical at {c.criticalThreshold} {c.unit}
                   </p>
                 </div>
                 <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
@@ -111,7 +106,7 @@ export default function ShoppingPageClient({ consumables, tanks, pyros }: Props)
                     <p className="font-medium text-sm break-words">{c.name}</p>
                   </div>
                   <p className="text-xs text-muted mt-0.5">
-                    {c.stockQuantity} {c.unit} — warning at {c.warningThreshold} {c.unit}
+                    {c.stockQuantity} {c.unit} - warning at {c.warningThreshold} {c.unit}
                   </p>
                 </div>
                 <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
@@ -199,7 +194,7 @@ export default function ShoppingPageClient({ consumables, tanks, pyros }: Props)
                     </span>
                   </div>
                   <p className="text-xs text-muted mt-0.5">
-                    {p.stockQuantity} units — critical at {p.criticalThreshold} units
+                    {p.stockQuantity} units - critical at {p.criticalThreshold} units
                   </p>
                 </div>
                 <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
@@ -220,7 +215,7 @@ export default function ShoppingPageClient({ consumables, tanks, pyros }: Props)
                     </span>
                   </div>
                   <p className="text-xs text-muted mt-0.5">
-                    {p.stockQuantity} units — warning at {p.warningThreshold} units
+                    {p.stockQuantity} units - warning at {p.warningThreshold} units
                   </p>
                 </div>
                 <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
