@@ -557,15 +557,15 @@ export default function EventForm({
               onChange={(e) => { setInvCaseFilter(e.target.value); setInvId('') }}
             >
               <option value="__none__">No case</option>
-              {allCases.map((c) => (
+              {allCases.filter((c) => !isMember('case', c.id)).map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
           )}
 
           {/* Picker row */}
-          <div className="flex gap-2 flex-wrap">
-            <select className="input-field flex-1" value={invId} onChange={(e) => setInvId(e.target.value)}>
+          <div className="space-y-2">
+            <select className="input-field" value={invId} onChange={(e) => setInvId(e.target.value)}>
               <option value="">-- Select {invType} --</option>
               {(invOptions as Array<{ id: string; name: string; status?: string; unit?: string; maxQty?: number }>).map((opt) => (
                 <option key={opt.id} value={opt.id}>
@@ -576,22 +576,24 @@ export default function EventForm({
                 </option>
               ))}
             </select>
-            {(invType === 'consumable' || invType === 'item' || invType === 'pyro') && (
-              <div className="flex flex-col gap-1">
-                <input
-                  type="text"
-                  inputMode={invType === 'consumable' ? 'decimal' : 'numeric'}
-                  className={`input-field w-24 ${invQtyError ? 'border-red-500' : ''}`}
-                  placeholder="Qty"
-                  value={invQtyRaw}
-                  onChange={(e) => { setInvQtyRaw(e.target.value); setInvQtyError('') }}
-                />
-                {invQtyError && <p className="text-red-400 text-xs">{invQtyError}</p>}
-              </div>
-            )}
-            <button type="button" onClick={addInventory} disabled={!invId} className="btn-primary text-sm shrink-0 h-[42px]">
-              Add
-            </button>
+            <div className="flex gap-2">
+              {(invType === 'consumable' || invType === 'item' || invType === 'pyro') && (
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="text"
+                    inputMode={invType === 'consumable' ? 'decimal' : 'numeric'}
+                    className={`input-field w-24 ${invQtyError ? 'border-red-500' : ''}`}
+                    placeholder="Qty"
+                    value={invQtyRaw}
+                    onChange={(e) => { setInvQtyRaw(e.target.value); setInvQtyError('') }}
+                  />
+                  {invQtyError && <p className="text-red-400 text-xs">{invQtyError}</p>}
+                </div>
+              )}
+              <button type="button" onClick={addInventory} disabled={!invId} className="btn-primary text-sm h-[42px] px-6">
+                Add
+              </button>
+            </div>
           </div>
         </div>
 

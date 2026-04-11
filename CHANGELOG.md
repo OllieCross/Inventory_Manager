@@ -4,6 +4,19 @@ All notable changes to SFX Pro One Inventory Manager are documented here.
 
 ---
 
+## v1.4.2 - 2026-04-11
+
+### Added
+
+- **Event detail - case origin on devices and items**: devices and items that belong to a case now show the case name as a subtitle in the event detail view; for items the case name and comment are displayed together separated by a dot
+
+### Fixed
+
+- **Event form - case filter blocks already-added cases**: cases that have already been added to the event as a whole are no longer shown in the device/item case filter dropdown, preventing users from picking individual devices or items from a case that is already included in full
+- **Event form - inventory picker uniform width**: all input fields in the inventory section (search, case filter, item select) are now full width; the qty input and Add button sit on a separate row below the item select
+
+---
+
 ## v1.4.1 - 2026-04-11
 
 ### Added

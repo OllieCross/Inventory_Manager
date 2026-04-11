@@ -58,8 +58,8 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     include: {
       stagehands: { include: { user: { select: { id: true, name: true } } } },
       cases: { include: { case: { select: { id: true, name: true, qrdata: true } } } },
-      devices: { include: { device: { select: { id: true, name: true, status: true } } } },
-      items: { include: { item: { select: { id: true, name: true, comment: true } } } },
+      devices: { include: { device: { select: { id: true, name: true, status: true, case: { select: { id: true, name: true } } } } } },
+      items: { include: { item: { select: { id: true, name: true, comment: true, case: { select: { id: true, name: true } } } } } },
       consumables: { include: { consumable: { select: { id: true, name: true, unit: true } } } },
       tanks: { include: { tank: { select: { id: true, name: true, unit: true, chemicalCompound: true } } } },
       pyros: { include: { pyro: { select: { id: true, name: true, category: true } } } },
@@ -150,7 +150,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
                 <Link key={device.id} href={`/devices/${device.id}`} className="card flex items-center justify-between gap-3 py-2 px-3 hover:bg-foreground/5 transition-colors">
                   <div>
                     <p className="text-sm">{device.name}</p>
-                    <p className="text-xs text-muted">{DEVICE_STATUS_LABELS[device.status] ?? device.status}</p>
+                    <p className="text-xs text-muted">
+                      {DEVICE_STATUS_LABELS[device.status] ?? device.status}
+                      {device.case && <span> &middot; {device.case.name}</span>}
+                    </p>
                   </div>
                   <span className="text-muted text-xl shrink-0" aria-hidden>&#8250;</span>
                 </Link>
@@ -167,7 +170,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
               {event.items.map(({ item, quantityNeeded }) => (
                 <div key={item.id} className="card py-2 px-3">
                   <p className="text-sm">{item.name} <span className="text-muted">x{quantityNeeded}</span></p>
-                  {item.comment && <p className="text-xs text-muted">{item.comment}</p>}
+                  {(item.comment || item.case) && (
+                    <p className="text-xs text-muted">
+                      {item.case && <span>{item.case.name}</span>}
+                      {item.case && item.comment && <span> &middot; </span>}
+                      {item.comment && <span>{item.comment}</span>}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
