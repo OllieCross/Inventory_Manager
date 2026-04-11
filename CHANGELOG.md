@@ -4,6 +4,14 @@ All notable changes to SFX Pro One Inventory Manager are documented here.
 
 ---
 
+## v1.4.5 - 2026-04-11
+
+### Added
+
+- **Tank detail - logbook entry button**: tank detail page now has a "+ Add logbook entry" button for editors, matching the device detail page UI; entries are added inline without a page reload and appear immediately at the top of the logbook list
+
+---
+
 ## v1.4.4 - 2026-04-11
 
 ### Added
