@@ -4,6 +4,19 @@ All notable changes to SFX Pro One Inventory Manager are documented here.
 
 ---
 
+## v1.4.9 - 2026-05-03
+
+### Added
+
+- **Image rotation in case and device editor**: every photo thumbnail in the create/edit forms for cases and devices now has a circular-arrow rotate button in the bottom-left corner; each tap rotates the image 90° clockwise; for pending images (not yet uploaded) the rotation is baked into the file via an in-browser canvas draw before upload so the stored image in MinIO is correctly oriented; for already-uploaded images the rotation is applied as a CSS transform for the current session
+
+### Fixed
+
+- **Inventory search - Slovak diacritics and case**: search in the Inventory tab now ignores accents and letter case; searching `kluc` finds `Kľúč`, `sroubovak` finds `Šroubovák`, etc.; implemented via NFD unicode decomposition stripping all combining marks (U+0300-U+036F) before comparison; covers all 17 Slovak diacritics (á ä č ď é í ĺ ľ ň ó ô ŕ š ť ú ý ž) across all inventory sections (cases, items within cases, devices, consumables, standalone items, tanks, pyros)
+- **QR scanner - double crosshair on Android and embedded scanners**: the camera view was showing two overlapping scanning frames - one from the custom CSS corner-bracket overlay and one injected by the `html5-qrcode` library when `qrbox` is configured; fixed by removing the `qrbox` option from the scanner config so the library no longer renders its own frame; only the custom crosshair overlay is now shown; affects all scanner instances (main scan page on Android, and the embedded scanners in device, case, and tank edit pages)
+
+---
+
 ## v1.4.8 - 2026-04-17
 
 ### Fixed

@@ -74,14 +74,16 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
-  const q = query.trim().toLowerCase()
+  // Strips diacritics (incl. Slovak: ľščžýáéíóúäôňťďŕĺ) and lowercases for accent-insensitive search
+  const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const q = norm(query.trim())
 
   const filteredCases = useMemo(() => {
     if (!q) return cases.map((c) => ({ ...c, matchedItems: [] as string[] }))
     return cases
       .map((c) => {
-        const nameMatch = c.name.toLowerCase().includes(q)
-        const matchedItems = c.items.filter((i) => i.name.toLowerCase().includes(q)).map((i) => i.name)
+        const nameMatch = norm(c.name).includes(q)
+        const matchedItems = c.items.filter((i) => norm(i.name).includes(q)).map((i) => i.name)
         if (nameMatch || matchedItems.length > 0) return { ...c, matchedItems }
         return null
       })
@@ -90,24 +92,24 @@ export default function InventoryPageClient({ cases, devices, consumables, stand
 
   const filteredDevices = useMemo(() =>
     q
-      ? devices.filter((d) => d.name.toLowerCase().includes(q))
+      ? devices.filter((d) => norm(d.name).includes(q))
       : devices.filter((d) => d.case === null),
     [devices, q]
   )
   const filteredConsumables = useMemo(() =>
-    q ? consumables.filter((c) => c.name.toLowerCase().includes(q)) : consumables,
+    q ? consumables.filter((c) => norm(c.name).includes(q)) : consumables,
     [consumables, q]
   )
   const filteredItems = useMemo(() =>
-    q ? standaloneItems.filter((i) => i.name.toLowerCase().includes(q)) : standaloneItems,
+    q ? standaloneItems.filter((i) => norm(i.name).includes(q)) : standaloneItems,
     [standaloneItems, q]
   )
   const filteredTanks = useMemo(() =>
-    q ? tanks.filter((t) => t.name.toLowerCase().includes(q)) : tanks,
+    q ? tanks.filter((t) => norm(t.name).includes(q)) : tanks,
     [tanks, q]
   )
   const filteredPyros = useMemo(() =>
-    q ? pyros.filter((p) => p.name.toLowerCase().includes(q) || (p.brand ?? '').toLowerCase().includes(q)) : pyros,
+    q ? pyros.filter((p) => norm(p.name).includes(q) || norm(p.brand ?? '').includes(q)) : pyros,
     [pyros, q]
   )
 

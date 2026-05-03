@@ -59,7 +59,7 @@ type DocumentRow = {
 }
 
 // Pending files buffered during create mode (uploaded after case is saved)
-type PendingImage = { file: File; previewUrl: string }
+type PendingImage = { file: File; previewUrl: string; rotation: number }
 type PendingDocument = { file: File; title: string; type: DocumentRow['type'] }
 
 type DeviceRow = {
@@ -166,6 +166,38 @@ async function uploadDocumentFile(
   }
 }
 
+async function rotateFileOnCanvas(file: File, degrees: number): Promise<File> {
+  if (!degrees) return file
+  return new Promise((resolve) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      const swap = degrees === 90 || degrees === 270
+      const canvas = document.createElement('canvas')
+      canvas.width = swap ? img.naturalHeight : img.naturalWidth
+      canvas.height = swap ? img.naturalWidth : img.naturalHeight
+      const ctx = canvas.getContext('2d')!
+      ctx.translate(canvas.width / 2, canvas.height / 2)
+      ctx.rotate((degrees * Math.PI) / 180)
+      ctx.drawImage(img, -img.naturalWidth / 2, -img.naturalHeight / 2)
+      URL.revokeObjectURL(url)
+      canvas.toBlob(
+        (blob) => resolve(new File([blob!], file.name.replace(/\.[^.]+$/, '.jpg'), { type: 'image/jpeg' })),
+        'image/jpeg', 0.92
+      )
+    }
+    img.src = url
+  })
+}
+
+function RotateIcon() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 2v6h-6"/><path d="M21 13a9 9 0 1 1-3-7.7L21 8"/>
+    </svg>
+  )
+}
+
 // ---------- Component ----------
 
 export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, allCases = [], allDevices = [] }: Props) {
@@ -185,6 +217,7 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
   // Files buffered in create mode, uploaded after case is saved
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([])
   const [pendingDocuments, setPendingDocuments] = useState<PendingDocument[]>([])
+  const [imageRotations, setImageRotations] = useState<Record<string, number>>({})
 
   // Draft document being configured before it is committed
   const [docDraft, setDocDraft] = useState<{ file: File; title: string; type: DocumentRow['type'] } | null>(null)
@@ -279,7 +312,7 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
   // ---------- Image handling ----------
 
   function addPendingImage(file: File) {
-    setPendingImages((prev) => [...prev, { file, previewUrl: URL.createObjectURL(file) }])
+    setPendingImages((prev) => [...prev, { file, previewUrl: URL.createObjectURL(file), rotation: 0 }])
   }
 
   function removePendingImage(index: number) {
@@ -287,6 +320,16 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
       URL.revokeObjectURL(prev[index].previewUrl)
       return prev.filter((_, i) => i !== index)
     })
+  }
+
+  function rotatePendingImage(index: number) {
+    setPendingImages((prev) =>
+      prev.map((p, i) => i === index ? { ...p, rotation: (p.rotation + 90) % 360 } : p)
+    )
+  }
+
+  function rotateUploadedImage(key: string) {
+    setImageRotations((prev) => ({ ...prev, [key]: ((prev[key] ?? 0) + 90) % 360 }))
   }
 
   async function processAndUploadImage(file: File) {
@@ -407,7 +450,7 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
 
         // Upload any buffered files and assign devices now that we have a caseId
         await Promise.all([
-          ...pendingImages.map((p) => processAndUploadImageWithId(p.file, created.id)),
+          ...pendingImages.map((p) => processAndUploadImageWithId(p.file, created.id, p.rotation)),
           ...pendingDocuments.map((p) => uploadDocumentWithId(p.file, p.title, p.type, created.id)),
           ...assignedDevices.map((d) =>
             fetch(`/api/devices/${d.id}`, {
@@ -439,10 +482,11 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
   }
 
   // Versions of upload helpers that take an explicit caseId (used during create->edit transition)
-  async function processAndUploadImageWithId(file: File, id: string) {
+  async function processAndUploadImageWithId(file: File, id: string, rotation = 0) {
+    const fileToUpload = await rotateFileOnCanvas(file, rotation)
     const placeholder: ImageRow = { fileName: file.name, fileSize: file.size, mimeType: file.type, url: '', uploading: true }
     setImages((prev) => [...prev, placeholder])
-    await uploadImageFile(file, id, (state, result) => {
+    await uploadImageFile(fileToUpload, id, (state, result) => {
       setImages((prev) =>
         prev.map((img) =>
           img.fileName === file.name && img.uploading
@@ -646,7 +690,8 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
             {pendingImages.map((p, i) => (
               <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-foreground/10 bg-surface">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p.previewUrl} alt={p.file.name} className="w-full h-full object-cover opacity-60" />
+                <img src={p.previewUrl} alt={p.file.name} className="w-full h-full object-cover opacity-60" style={{ transform: `rotate(${p.rotation}deg)` }} />
+                <button type="button" onClick={() => rotatePendingImage(i)} className="absolute bottom-1 left-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-white/20 transition-colors" aria-label="Rotate photo"><RotateIcon /></button>
                 <button type="button" onClick={() => removePendingImage(i)} className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500/80 transition-colors" aria-label="Remove photo">×</button>
               </div>
             ))}
@@ -656,27 +701,32 @@ export default function CaseEditorForm({ mode, caseId, isAdmin, initialData, all
         {/* Uploaded images (edit mode) */}
         {images.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
-            {images.map((img, i) => (
-              <div key={img.id ?? i} className="relative aspect-square rounded-lg overflow-hidden border border-foreground/10 bg-surface">
-                {img.uploading ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
-                  </div>
-                ) : img.error ? (
-                  <div className="w-full h-full flex items-center justify-center p-2">
-                    <p className="text-red-400 text-xs text-center">{img.error}</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img.url} alt={img.fileName} className="w-full h-full object-cover" />
-                    {img.id && (
-                      <button type="button" onClick={() => setConfirmTarget({ kind: 'image', id: img.id!, name: img.fileName })} className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500/80 transition-colors" aria-label="Delete photo">&times;</button>
-                    )}
-                  </>
-                )}
-              </div>
-            ))}
+            {images.map((img, i) => {
+              const rotKey = img.id ?? String(i)
+              const rotation = imageRotations[rotKey] ?? 0
+              return (
+                <div key={img.id ?? i} className="relative aspect-square rounded-lg overflow-hidden border border-foreground/10 bg-surface">
+                  {img.uploading ? (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : img.error ? (
+                    <div className="w-full h-full flex items-center justify-center p-2">
+                      <p className="text-red-400 text-xs text-center">{img.error}</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.url} alt={img.fileName} className="w-full h-full object-cover" style={{ transform: `rotate(${rotation}deg)` }} />
+                      <button type="button" onClick={() => rotateUploadedImage(rotKey)} className="absolute bottom-1 left-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center hover:bg-white/20 transition-colors" aria-label="Rotate photo"><RotateIcon /></button>
+                      {img.id && (
+                        <button type="button" onClick={() => setConfirmTarget({ kind: 'image', id: img.id!, name: img.fileName })} className="absolute top-1 right-1 bg-black/60 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-500/80 transition-colors" aria-label="Delete photo">&times;</button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )}
       </section>

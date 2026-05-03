@@ -33,7 +33,7 @@ export default function QRScanner({ onScan }: Props) {
 
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 10, qrbox: { width: 260, height: 260 } },
+        { fps: 10 },
         (decoded) => {
           if (didScan) return
           didScan = true
