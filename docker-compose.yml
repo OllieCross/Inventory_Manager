@@ -100,16 +100,28 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    # Nightly at 02:00 local time; dump to a temp file and rename so a failed
+    # dump never overwrites the last good backup
     entrypoint: >
       sh -c "
+        set -o pipefail;
         while true; do
-          PGPASSWORD=$$POSTGRES_PASSWORD pg_dump -h postgres -U $$POSTGRES_USER $$POSTGRES_DB | gzip > /backups/postgres_$$(date +%Y%m%d_%H%M%S).sql.gz &&
-          find /backups -name 'postgres_*.sql.gz' -mtime +7 -delete;
-          sleep 86400;
+          sleep $$(( ($$(date -d 02:00 +%s) - $$(date +%s) + 86400) % 86400 ));
+          if PGPASSWORD=$$POSTGRES_PASSWORD pg_dump -h postgres -U $$POSTGRES_USER $$POSTGRES_DB | gzip > /backups/postgres.sql.gz.tmp; then
+            mv /backups/postgres.sql.gz.tmp /backups/postgres.sql.gz;
+          else
+            rm -f /backups/postgres.sql.gz.tmp;
+          fi;
+          sleep 60;
         done
       "
     volumes:
-      - postgres_backups:/backups
+      - type: volume
+        source: nas_backups
+        target: /backups
+        volume:
+          nocopy: true
+      - /etc/localtime:/etc/localtime:ro
     tmpfs:
       - /var/lib/postgresql/data
     depends_on:
@@ -124,12 +136,15 @@ services:
     restart: unless-stopped
     environment:
       BACKUP_CRON_EXPRESSION: "0 2 * * *"
-      BACKUP_RETENTION_DAYS: "7"
-      BACKUP_FILENAME: "redis-backup-%Y-%m-%dT%H-%M-%S.tar.gz"
+      BACKUP_FILENAME: "redis-backup.tar.gz"
     volumes:
       - redis_data:/backup/redis_data:ro
-      - redis_backups:/archive
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - type: volume
+        source: nas_backups
+        target: /archive
+        volume:
+          nocopy: true
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - internal
 
@@ -139,12 +154,15 @@ services:
     restart: unless-stopped
     environment:
       BACKUP_CRON_EXPRESSION: "0 2 * * *"
-      BACKUP_RETENTION_DAYS: "7"
-      BACKUP_FILENAME: "minio-backup-%Y-%m-%dT%H-%M-%S.tar.gz"
+      BACKUP_FILENAME: "minio-backup.tar.gz"
     volumes:
       - minio_data:/backup/minio_data:ro
-      - minio_backups:/archive
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - type: volume
+        source: nas_backups
+        target: /archive
+        volume:
+          nocopy: true
+      - /etc/localtime:/etc/localtime:ro
     networks:
       - internal
 
@@ -158,12 +176,14 @@ volumes:
   minio_data:
     name: sfxproone_minio_data
     external: true
-  postgres_backups:
-    name: sfxproone_postgres_backups
-  redis_backups:
-    name: sfxproone_redis_backups
-  minio_backups:
-    name: sfxproone_minio_backups
+  # Synology NAS share; each nightly backup overwrites the previous one
+  nas_backups:
+    name: sfxproone_nas_backups
+    driver: local
+    driver_opts:
+      type: nfs
+      o: addr=192.168.0.22,nfsvers=4,rw,soft
+      device: ":/volume3/Homelab_Backups/sfxproone"
 
 networks:
   internal:
