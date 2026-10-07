@@ -39,7 +39,7 @@ The app supports QR code scanning (including legacy Google Keep QR codes), direc
 - **Access Control:** Three roles - VIEWER, EDITOR, ADMIN - enforced on every page and API route. SSO via Authentik OIDC or credentials login.
 - **Rate Limiting:** Redis sliding-window rate limiter on login attempts and file upload/write endpoints per user.
 - **Audit Logging:** Admin panel shows the last 100 audit log entries (grouped by date) covering all entity changes (cases, devices, consumables, groups, events, items, tanks, pyro).
-- **Backup System:** Three dedicated Docker containers run nightly at 02:00 - `postgres-backup` (pg_dump - gzip), `redis-backup`, and `minio-backup` (volume archives via offen/docker-volume-backup). Backups are written to the Synology NAS over NFS (`192.168.0.22:/volume3/Homelab_Backups/sfxproone`), and each run overwrites the previous one.
+- **Backup System:** Three dedicated Docker containers run nightly at 02:00 - `postgres-backup` (pg_dump - gzip), `redis-backup`, and `minio-backup` (volume archives via offen/docker-volume-backup). Backups are written to the Synology NAS over NFS (share `/volume3/Homelab_Backups/sfxproone`; the NAS address is `NAS_HOST` in `.env`), and each run overwrites the previous one.
 - **Update Snackbar:** After a version bump a blue snackbar appears on first visit showing the new version; auto-dismisses after 6 seconds; tracked per-browser in `localStorage`.
 - **Changelog:** Release notes rendered from `CHANGELOG.md` at `/changelog`. The most recent version header displays a "Latest" badge.
 - **PWA-ready:** `manifest.json` and Apple touch icons for iOS/Android home screen shortcuts.
